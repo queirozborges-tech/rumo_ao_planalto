@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rumo ao Planalto — simulador de campanha presidencial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e7e8ec; --surface:#ffffff; --surface2:#f1f2f6; --ink:#1d2430; --muted:#475061; --line:#c9cdd7;
+  --green:#138a45; --green-ink:#ffffff; --orange:#d65f12; --yellow:#ffd23f; --yellow-ink:#1d2430;
+  --danger:#b83227; --ok:#11743b; --urna:#d8d6cf; --urna-dark:#2a2d33; --screen:#eef3e6; --band:#1d2430; --band-ink:#ffd23f;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --surface:#1d2129; --surface2:#262b35; --ink:#eceff4; --muted:#b5bccb; --line:#3a404d;
+    --green:#2bb465; --green-ink:#08130c; --orange:#f39152; --yellow:#ffd84f; --yellow-ink:#16181d;
+    --danger:#ff7b6b; --ok:#3ccf78; --urna:#3a3c40; --urna-dark:#0f1114; --screen:#1f2a1c; --band:#ffd84f; --band-ink:#16181d; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --surface:#1d2129; --surface2:#262b35; --ink:#eceff4; --muted:#b5bccb; --line:#3a404d;
+  --green:#2bb465; --green-ink:#08130c; --orange:#f39152; --yellow:#ffd84f; --yellow-ink:#16181d;
+  --danger:#ff7b6b; --ok:#3ccf78; --urna:#3a3c40; --urna-dark:#0f1114; --screen:#1f2a1c; --band:#ffd84f; --band-ink:#16181d; color-scheme:dark;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 90px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input{font:inherit;color:inherit}
+.top{max-width:980px;margin:0 auto;padding:10px 16px 0;display:flex;justify-content:space-between;align-items:center}
+.brand{font-stretch:125%;font-weight:900;font-size:.95rem}
+.linkbtn{background:none;border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-weight:700;font-size:.88rem;cursor:pointer;color:var(--ink)}
+.wrap{max-width:980px;margin:0 auto;padding:12px 16px 64px}
+h1,h2,h3{font-stretch:112%;line-height:1.1;margin:0 0 .4em}
+h1{font-size:clamp(2.2rem,7vw,4.2rem);font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(1.4rem,3.6vw,2rem);font-weight:850}
+h3{font-size:1.1rem;font-weight:800}
+[tabindex="-1"]:focus{outline:none}
+p{margin:.3em 0 .8em;max-width:70ch}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;margin:14px 0}
+.panel.quiet{background:transparent;border-style:dashed}
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.opt{display:block;width:100%;text-align:left;background:var(--surface2);border:2px solid transparent;border-radius:6px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.opt:hover{border-color:var(--line)}
+.opt.sel{border-color:var(--green);background:color-mix(in srgb,var(--green) 11%,var(--surface))}
+.opt b{display:block;font-weight:750;margin-bottom:2px}
+.opt .small{display:block}
+.opt:disabled{opacity:.62;cursor:default}
+.opt.sel:disabled{opacity:1}
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:5px;padding:12px 20px;font-weight:800;font-stretch:108%;cursor:pointer;background:var(--green);color:var(--green-ink);box-shadow:0 3px 0 color-mix(in srgb,var(--green) 60%,#000)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--green) 60%,#000)}
+.btn.alt{background:var(--surface2);color:var(--ink);box-shadow:0 3px 0 var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+label.f{display:block;font-weight:700;margin:12px 0 4px}
+input.t{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:5px;background:var(--surface2)}
+.chip{display:inline-block;border:1px solid var(--line);background:var(--surface2);border-radius:99px;padding:7px 13px;margin:3px 4px 3px 0;cursor:pointer;font-size:.92rem;font-weight:600}
+.chip.sel{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.bar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--muted)}
+.meter{display:flex;gap:3px}.meter i{width:14px;height:8px;border-radius:2px;background:var(--line)}.meter i.on{background:var(--ink)}
+.tag{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--surface2);margin:2px 4px 2px 0}
+.tag.up{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}
+.tag.down{background:color-mix(in srgb,var(--danger) 14%,var(--surface));color:var(--danger)}
+.tag.hint{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600}
+.warn{border-left:4px solid var(--orange);padding:8px 12px;background:color-mix(in srgb,var(--orange) 9%,var(--surface));margin:8px 0;border-radius:0 5px 5px 0}
+.good{border-left:4px solid var(--ok);padding:8px 12px;background:color-mix(in srgb,var(--ok) 9%,var(--surface));margin:8px 0;border-radius:0 5px 5px 0}
+.qg{border-left:4px solid var(--ink);padding:10px 14px;background:var(--surface2);margin:10px 0;border-radius:0 5px 5px 0}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:10px 0}
+.progress>i{display:block;height:100%;background:var(--green);transition:width .3s}
+.errc{color:var(--danger);font-weight:600}.okc{color:var(--ok);font-weight:600}
+.args{font-size:.92rem;color:color-mix(in srgb,var(--ink) 82%,var(--surface));margin-top:4px;display:block}
+
+.santinho{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;background:var(--yellow);color:var(--yellow-ink);border-radius:6px;padding:12px 16px;margin:10px 0}
+.santinho .num{font-stretch:62%;font-weight:900;font-size:3.4rem;line-height:.9;letter-spacing:-.02em;background:var(--yellow-ink);color:var(--yellow);padding:6px 10px;border-radius:4px;min-width:84px;text-align:center}
+.santinho .nm{font-stretch:125%;font-weight:900;font-size:1.25rem;line-height:1.05;text-transform:uppercase}
+.santinho .sl{font-style:italic;font-weight:600}
+.santinho .pt{font-size:.88rem;font-weight:700;opacity:.85}
+
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}
+.hudg{display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(5,minmax(0,1fr));gap:10px;align-items:center}
+.minis{display:flex;align-items:center;gap:8px;min-width:0}
+.mnum{font-stretch:62%;font-weight:900;font-size:1.6rem;line-height:1;background:var(--yellow);color:var(--yellow-ink);padding:3px 7px;border-radius:3px}
+.mnm{font-weight:800;font-stretch:112%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat{font-size:.78rem;color:var(--muted);line-height:1.2}
+.stat b{display:block;color:var(--ink);font-size:1rem}
+@media (max-width:620px){.hudg{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px}.minis{grid-column:1/-1}}
+
+.poll .ln{display:grid;grid-template-columns:minmax(120px,190px) 1fr 76px;gap:10px;align-items:center;margin:6px 0}
+.poll .ln .nm{font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.poll .ln .val{text-align:right;font-weight:800}
+.poll .bar{height:16px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.d{font-size:.78rem;font-weight:700;margin-left:4px}
+.d.up{color:var(--ok)}.d.down{color:var(--danger)}
+.fx{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:.93rem}
+.fx:last-child{border-bottom:0}
+
+.axis{margin:12px 0}
+.axis .lab{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted)}
+.axis .track{position:relative;height:26px;background:var(--surface2);border-radius:13px;border:1px solid var(--line)}
+.axis .track::after{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:1px;background:var(--line)}
+.axis .pin{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--surface)}
+.axis .pin.me{width:22px;height:22px;background:var(--yellow);border:3px solid var(--yellow-ink);z-index:2}
+
+.event{border:2px solid var(--band);border-radius:6px;background:var(--surface);margin:14px 0;overflow:hidden}
+.event .band{background:var(--band);color:var(--band-ink);font-weight:850;font-stretch:118%;padding:7px 16px;font-size:.95rem}
+.event .evb{padding:16px 18px 18px}
+.news{font-size:.93rem;margin:4px 0;padding-left:14px;position:relative}
+.news::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:6px;background:var(--muted);border-radius:1px}
+
+.qrow{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.qrow:last-child{border-bottom:0}.qt{font-weight:700;font-size:.93rem}
+@media (max-width:620px){.qrow{grid-template-columns:1fr}}
+
+.urna{background:var(--urna);border-radius:10px;padding:16px;display:grid;grid-template-columns:1.4fr 1fr;gap:16px;max-width:640px;margin:14px auto;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+.urna .tela{background:var(--screen);color:#1b2416;border-radius:4px;padding:14px;min-height:180px;font-size:.95rem;border:3px solid var(--urna-dark)}
+:root[data-theme="dark"] .urna .tela{color:#dfe9d6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .urna .tela{color:#dfe9d6}}
+.urna .tela .dig{display:inline-block;width:34px;height:44px;border:2px solid currentColor;margin-right:6px;text-align:center;font-size:2rem;font-weight:800;line-height:40px}
+.urna .teclado{background:var(--urna-dark);border-radius:6px;padding:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.urna .k{background:#1a1c20;color:#f2f2f2;border-radius:4px;padding:8px 0;font-weight:800;font-size:1.05rem;text-align:center}
+.urna .kb{grid-column:span 3;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+.urna .kb span{border-radius:4px;padding:6px 2px;text-align:center;font-size:.62rem;font-weight:900}
+@media (max-width:620px){.urna{grid-template-columns:1fr}.poll .ln{grid-template-columns:104px 1fr 64px}.santinho .num{font-size:2.6rem;min-width:66px}}
+.chart svg{width:100%;height:auto;display:block}
+.seglist .ln{display:grid;grid-template-columns:minmax(130px,220px) 1fr 52px;gap:10px;align-items:center;margin:5px 0;font-size:.92rem}
+.hero-urna{font-stretch:62%;font-weight:900;font-size:clamp(5rem,20vw,11rem);line-height:.8;letter-spacing:-.03em;color:var(--ink)}
+.fade{animation:fd .35s ease-out}
+@keyframes fd{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}.progress>i{transition:none}}
+details summary{cursor:pointer;font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);max-width:680px;width:calc(100% - 32px);padding:0}
+dialog::backdrop{background:rgba(10,12,16,.6)}
+.dlg{padding:20px 22px;max-height:82vh;overflow:auto}
+.dlg h3{margin-top:16px}
+/* capa e cenas */
+:root{--sky1:#8fcbef;--sky2:#fbe6c2;--sun:#ffd23f;--lawn:#58a85a;--bldg:#f6f6f1;--glass:#3f5f76}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sky1:#0c1a33;--sky2:#2f3f68;--sun:#efe9cf;--lawn:#21462a;--bldg:#d5d9e1;--glass:#1d3046}}
+:root[data-theme="dark"]{--sky1:#0c1a33;--sky2:#2f3f68;--sun:#efe9cf;--lawn:#21462a;--bldg:#d5d9e1;--glass:#1d3046}
+.cover{position:relative;margin:6px 0 10px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.scene{display:block;width:100%;height:auto}
+.cover-t{position:absolute;left:4%;top:5%;max-width:60%}
+.cover-t h1{font-size:clamp(2rem,7.4vw,5rem);font-stretch:70%;font-weight:900;letter-spacing:-.01em;line-height:.9;margin:0;color:var(--ink);text-shadow:0 2px 0 color-mix(in srgb,var(--surface) 55%,transparent)}
+.kick2{font-weight:800;font-stretch:112%;font-size:clamp(.85rem,2vw,1.15rem);margin:.4em 0 0;color:var(--ink)}
+@media (max-width:620px){.cover-t{position:static;max-width:none;padding:12px 14px;background:var(--surface)}}
+.fall{animation:fall 10s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes fall{from{transform:translateY(-40px) rotate(0deg)}to{transform:translateY(600px) rotate(380deg)}}
+@media (prefers-reduced-motion:reduce){.fall{animation:none;transform:translateY(var(--y)) rotate(20deg)}}
+/* bonecos */
+.av{display:block}
+.sav{background:color-mix(in srgb,var(--yellow-ink) 12%,var(--yellow));border-radius:6px;overflow:hidden;align-self:end;margin:-12px 0 -12px -16px;padding:4px 0 0}
+.santinho{grid-template-columns:auto auto 1fr}
+.hd{display:inline-flex;width:max-content;border-radius:50%;border:2.5px solid var(--line);background:var(--surface2);overflow:hidden;margin-right:8px;vertical-align:middle;flex-shrink:0}
+.hd .av{border-radius:50%}
+.hd.big{border-width:3px;margin-right:0}
+.poll .ln .nm{display:flex;align-items:center}
+.aved{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start}
+.avprev{background:linear-gradient(var(--sky1),var(--sky2));border-radius:8px;padding:10px 10px 0;display:flex;justify-content:center;position:sticky;top:12px}
+.lbl{display:block;font-weight:700;font-size:.9rem;margin:10px 0 4px}
+.sws{display:flex;flex-wrap:wrap;gap:6px}
+.sw{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.sw.sel{outline:3px solid var(--ink);outline-offset:2px}
+@media (max-width:620px){.aved{grid-template-columns:1fr}.avprev{position:static}}
+/* impacto */
+.g4{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.impbox{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.imp{display:inline-flex;align-items:center;gap:8px;margin-right:6px;vertical-align:middle}
+.iv{font-weight:900;font-stretch:80%;font-size:1.25rem;min-width:46px}
+.iv.up{color:var(--ok)}.iv.down{color:var(--danger)}
+.il{font-size:.8rem;color:var(--muted)}
+.ib{position:relative;display:inline-block;width:80px;height:8px;border-radius:4px;background:var(--line)}
+.ib::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--muted)}
+.ib i{position:absolute;top:0;bottom:0;border-radius:4px}
+.ib i.p{background:var(--ok)}.ib i.n{background:var(--danger)}
+.it{display:block;margin-top:4px}
+.ico{vertical-align:-3px}
+.impcard{display:grid;grid-template-columns:auto auto 1fr;gap:14px;align-items:center;border:2px solid var(--line);border-radius:8px;padding:10px 14px;margin:10px 0;background:var(--surface)}
+.impcard.up{border-color:var(--ok)}.impcard.down{border-color:var(--danger)}
+.impcard .hd{margin:0}
+.ibig{font-weight:900;font-stretch:65%;font-size:2.6rem;line-height:1}
+.ibig.up{color:var(--ok)}.ibig.down{color:var(--danger)}
+.ibig small{display:block;font-size:.75rem;font-stretch:100%;color:var(--muted);font-weight:700}
+@media (max-width:620px){.impcard{grid-template-columns:auto 1fr}.impcard>div:last-child{grid-column:1/-1}}
+.fx2{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:.93rem}
+.fx2 .it{grid-column:1/-1;margin:0}
+.evhead{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.evico{display:flex;width:64px;height:64px;border-radius:12px;background:color-mix(in srgb,var(--orange) 14%,var(--surface));color:var(--orange);align-items:center;justify-content:center}
+.event .band{display:flex;align-items:center;gap:8px}
+.segi{display:inline-flex;color:var(--green)}
+.chance{display:flex;align-items:center;gap:8px;margin-top:8px}.opt .chance .small{display:inline}.opt .chance b{display:inline;margin:0}
+.cbar{display:inline-block;width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.cbar i{display:block;height:100%;background:var(--ink)}
+.bigv{font-size:1.6rem;font-stretch:75%;font-weight:900}
+/* debate */
+.stage{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:end;border-radius:10px;padding:18px 16px 0;margin:12px 0;background:radial-gradient(ellipse at 50% 0%,#3b4a73 0%,#141a2b 70%);color:#fff;overflow:hidden}
+.pod{display:flex;flex-direction:column;align-items:center;position:relative}
+.podium{width:120px;background:#2a3350;border-top:6px solid;text-align:center;font-weight:900;font-stretch:65%;font-size:1.6rem;padding:4px 0 10px;margin-top:-18px;position:relative;z-index:1}
+.pn{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:.72rem;font-weight:700;z-index:2;opacity:.85}
+.bubble{align-self:center;background:#fff;color:#1d2430;border-radius:12px;padding:12px 14px;font-weight:600;font-size:.92rem;position:relative;margin-bottom:40px}
+.bubble::before{content:"";position:absolute;left:-10px;top:50%;border:10px solid transparent;border-right-color:#fff;border-left:0;transform:translateY(-50%)}
+@media (max-width:620px){.stage{grid-template-columns:1fr 1fr}.bubble{grid-column:1/-1;grid-row:1;margin-bottom:6px}.bubble::before{display:none}.podium{width:100px}}
+</style>
+</head>
+<body>
+<header class="top"><span class="brand">Rumo ao Planalto</span><button type="button" class="linkbtn" onclick="openHelp()">Como funciona</button></header>
+<main class="wrap" id="app"></main>
+<div id="live" class="sr" aria-live="polite"></div>
+<dialog id="help" aria-labelledby="helpT"><div class="dlg" id="helpBody"></div></dialog>
+<script>
+// ===== ENGINE START =====
+const AX=['eco','soc','seg','amb','inst'];
+const AXL={
+  eco:['Mais Estado','Mais mercado','Economia'],
+  soc:['Progressista','Conservador','Costumes'],
+  seg:['Prevenção social','Linha-dura','Segurança'],
+  amb:['Produção primeiro','Preservação primeiro','Meio ambiente'],
+  inst:['Institucional','Antissistema','Sistema político']
+};
+const SEGS=[
+ {id:'evang',n:'Evangélicos e religiosos conservadores',s:'Evangélicos',sh:.16,ideal:{eco:.3,soc:1.8,seg:1.3,amb:-.2,inst:.6},sal:{eco:.3,soc:1,seg:.5,amb:.1,inst:.3}},
+ {id:'ne',n:'Nordeste popular e beneficiários de programas sociais',s:'Nordeste popular',sh:.18,ideal:{eco:-1.6,soc:.6,seg:.2,amb:0,inst:-.4},sal:{eco:1,soc:.25,seg:.2,amb:.1,inst:.25}},
+ {id:'agro',n:'Agronegócio e interior',s:'Agro e interior',sh:.10,ideal:{eco:1.2,soc:1.2,seg:1.6,amb:-1.6,inst:.6},sal:{eco:.5,soc:.4,seg:.5,amb:.8,inst:.3}},
+ {id:'cm',n:'Classe média urbana',s:'Classe média',sh:.14,ideal:{eco:.8,soc:.1,seg:.8,amb:.5,inst:.2},sal:{eco:.5,soc:.3,seg:.4,amb:.2,inst:.5}},
+ {id:'jov',n:'Jovens urbanos e progressistas',s:'Jovens progressistas',sh:.11,ideal:{eco:-.7,soc:-1.7,seg:-1.1,amb:1.7,inst:.2},sal:{eco:.3,soc:.8,seg:.4,amb:.6,inst:.2}},
+ {id:'serv',n:'Servidores, sindicatos e professores',s:'Servidores',sh:.08,ideal:{eco:-1.6,soc:-.6,seg:-.5,amb:.6,inst:-1},sal:{eco:.9,soc:.3,seg:.2,amb:.2,inst:.4}},
+ {id:'merc',n:'Mercado financeiro e empresários',s:'Mercado',sh:.05,ideal:{eco:1.8,soc:.2,seg:.6,amb:0,inst:-1.2},sal:{eco:1.1,soc:.1,seg:.2,amb:.1,inst:.6}},
+ {id:'per',n:'Periferias urbanas e trabalhadores informais',s:'Periferias',sh:.18,ideal:{eco:-.4,soc:.8,seg:1.1,amb:0,inst:.9},sal:{eco:.5,soc:.3,seg:.6,amb:.05,inst:.4}}
+];
+const SEG=Object.fromEntries(SEGS.map(s=>[s.id,s]));
+
+const OPPS=[
+ {id:'sev',nome:'Severino Matos',g:'o',partido:'Frente Trabalhista Nacional',sig:'FTN',num:12,cor:'#d0453b',slogan:'O povo de volta ao orçamento',
+  bio:'Ex-governador de um estado do Nordeste, carismático e com máquina partidária forte. Carrega investigações antigas de corrupção que nunca foram julgadas.',
+  arq:'Esquerda trabalhista',pos:{eco:-1.5,soc:.1,seg:-.2,amb:.2,inst:-.6},ap:.42,sb:{ne:.5,serv:.3},rej:9},
+ {id:'cor',nome:'Coronel Augusto Vilela',g:'o',partido:'Pátria e Família',sig:'PEF',num:27,cor:'#2b6cb0',slogan:'Ordem, fé e liberdade',
+  bio:'Militar da reserva e deputado de vários mandatos. Ganhou projeção nas redes com discurso contra o “sistema”, a corrupção e o crime.',
+  arq:'Direita conservadora',pos:{eco:1.0,soc:1.7,seg:1.9,amb:-1.3,inst:1.5},ap:.37,sb:{evang:.35,agro:.3},rej:11},
+ {id:'bea',nome:'Beatriz Lacerda',g:'a',partido:'Centro Democrático Republicano',sig:'CDR',num:41,cor:'#7b5ea7',slogan:'Competência para governar',
+  bio:'Economista, ex-ministra e ex-prefeita de capital. Bem avaliada por especialistas, mas vista como distante e “elitista” por parte do eleitorado.',
+  arq:'Centro liberal',pos:{eco:1.4,soc:-.2,seg:.6,amb:.6,inst:-1.3},ap:.05,sb:{merc:.45,cm:.25},rej:3},
+ {id:'liv',nome:'Lívia Andrade',g:'a',partido:'Partido Verde Social',sig:'PVS',num:56,cor:'#2e9e5b',slogan:'O futuro não pode esperar',
+  bio:'Ativista ambiental e senadora jovem, forte nas redes e entre universitários. Enfrenta resistência no agro e entre religiosos.',
+  arq:'Esquerda progressista e ambientalista',pos:{eco:-.8,soc:-1.6,seg:-1,amb:1.9,inst:.2},ap:-.1,sb:{jov:.55},rej:4}
+];
+
+const LABELS={esq:{n:'Esquerda',v:-1.3},ce:{n:'Centro-esquerda',v:-.6},c:{n:'Centro',v:0},cd:{n:'Centro-direita',v:.6},dir:{n:'Direita',v:1.3}};
+
+const PARTIES={
+ psr:{n:'Partido Social Renovador',sig:'PSR',ideo:-.6,tv:5,fundo:5,bag:.1,flex:false,sb:{},d:'Centro-esquerda moderada, bancada média, sem grandes escândalos.'},
+ rps:{n:'Rede Popular Socialista',sig:'RPS',ideo:-1.4,tv:3,fundo:3,bag:.05,flex:false,sb:{jov:.08,serv:.05},d:'Esquerda de militância aguerrida e forte nas redes. Pouco tempo de TV.'},
+ mdu:{n:'Movimento Democrático Unido',sig:'MDU',ideo:.1,tv:9,fundo:9,bag:.45,flex:true,sb:{agro:.08,ne:.06,cm:-.1,per:-.06},d:'O maior partido do Centrão: muito tempo de TV, palanques em todos os estados e um histórico de escândalos.'},
+ ul:{n:'União Liberal',sig:'UL',ideo:.9,tv:3,fundo:6,bag:.05,flex:false,sb:{merc:.1,cm:.05},d:'Liberal na economia, discurso de gestão. Bancada pequena, doadores do setor privado.'},
+ aco:{n:'Aliança Conservadora',sig:'ACO',ideo:1.4,tv:5,fundo:5,bag:.15,flex:false,sb:{evang:.08},d:'Direita conservadora, ligada a frentes religiosas e à bancada da segurança.'},
+ ab:{n:'Avança Brasil',sig:'AB',ideo:0,tv:1,fundo:2,bag:0,flex:true,sb:{},d:'Partido nanico, sem ideologia definida. Quase nada de TV, mas sem passado para explicar.'}
+};
+
+const VICES={
+ agro:{n:'Empresário do agro',d:'Presidente de uma grande cooperativa do Centro-Oeste.',sb:{agro:.25,merc:.06,jov:-.08}},
+ pastora:{n:'Pastora e deputada evangélica',d:'Líder de uma igreja com milhões de fiéis.',sb:{evang:.3,jov:-.15,cm:-.03}},
+ sindical:{n:'Sindicalista histórico',d:'Fundador de uma central sindical, liderou grandes greves.',sb:{serv:.25,ne:.08,merc:-.15}},
+ economista:{n:'Economista do mercado',d:'Ex-presidente de um grande banco.',sb:{merc:.3,cm:.08,ne:-.05}},
+ nordeste:{n:'Ex-governadora do Nordeste',d:'Deixou o governo com alta aprovação.',sb:{ne:.25,per:.05}},
+ general:{n:'General da reserva',d:'Ex-comandante de missão de paz, discurso de ordem.',sb:{per:.1,agro:.1,evang:.05,jov:-.2,serv:-.05}},
+ cientista:{n:'Cientista e ambientalista',d:'Pesquisadora reconhecida internacionalmente pelo clima.',sb:{jov:.25,cm:.05,agro:-.2}},
+ centrao:{n:'Cacique do Centrão',d:'Senador há 24 anos. Traz partidos, TV e dinheiro.',sb:{agro:.05,ne:.05,cm:-.08},tv:3,money:2,bag:.25},
+ influencer:{n:'Influenciadora digital',d:'30 milhões de seguidores, nunca disputou eleição.',sb:{jov:.12,per:.12,cm:-.08},fame:.1}
+};
+
+const MKTS={
+ desc:{n:'O Desconstrutor',d:'Especialista em dossiês e propaganda negativa. Ataques rendem mais, mas sua rejeição também sobe.',ap:0,atk:1.6,rejm:1.4,sb:{},deb:{ataque:.2}},
+ emo:{n:'O Emotivo',d:'Constrói a história de vida do candidato, jingles e lágrimas no horário eleitoral.',ap:.08,atk:1,rejm:1,sb:{ne:.03,per:.03},deb:{emocao:.22}},
+ tec:{n:'O Técnico',d:'Propostas detalhadas, dados e programa de governo robusto. Pouco apelo popular.',ap:-.03,atk:.9,rejm:.9,sb:{cm:.08,merc:.08},deb:{dados:.25}},
+ dig:{n:'O Digital',d:'Cortes virais, influenciadores e grupos de mensagens. Alcance enorme, risco de polêmica.',ap:.02,atk:1.2,rejm:1.1,sb:{jov:.08,per:.08},deb:{},digital:true},
+ pop:{n:'O Popular',d:'Carreatas, comícios, forró e santinho na mão. Forte no corpo a corpo.',ap:.03,atk:1,rejm:1,sb:{ne:.1,per:.07,cm:-.03},deb:{emocao:.08}}
+};
+
+// temas: v = posição nos eixos; cost = impacto fiscal; sb = efeitos específicos em segmentos
+const THEMES=[
+ {id:'trib',t:'Reforma tributária: quem paga a conta?',c:'O Brasil cobra muito imposto sobre consumo, que pesa mais no bolso dos pobres, e tem um sistema considerado dos mais complexos do mundo.',
+  o:[{t:'Taxar grandes fortunas, lucros e dividendos e isentar do IR quem ganha pouco',s:'taxar os mais ricos',v:{eco:-1.6},sb:{merc:-.25,ne:.05},a:'Defensores: justiça tributária, quem tem mais paga mais. Críticos: fuga de capitais e menos investimento.'},
+     {t:'Simplificar com um IVA nacional e aumentar a progressividade aos poucos',s:'simplificar os impostos aos poucos',v:{eco:.2},a:'Defensores: segurança jurídica e transição suave. Críticos: muda pouco a desigualdade no curto prazo.'},
+     {t:'Cortar impostos de forma ampla e reduzir o tamanho do Estado',s:'cortar impostos e encolher o Estado',v:{eco:1.7},cost:1,sb:{merc:.15},a:'Defensores: mais dinheiro no bolso e no investimento. Críticos: menos receita para saúde e educação.'}]},
+ {id:'priv',t:'Privatizações: Petrobras, Correios, bancos públicos',c:'Estatais já foram símbolo de soberania e também palco de escândalos. A venda de empresas públicas divide o país há três décadas.',
+  o:[{t:'Estatais são estratégicas: nada de privatizar, e reestatizar o que for possível',s:'manter e ampliar as estatais',v:{eco:-1.9},sb:{serv:.1},a:'Defensores: soberania, preço justo e empregos. Críticos: ineficiência e uso político.'},
+     {t:'Concessões e privatizações seletivas, mantendo setores estratégicos',s:'privatizar só parte das estatais',v:{eco:.6},a:'Defensores: pragmatismo, caso a caso. Críticos: pode virar balcão de negócios.'},
+     {t:'Privatizar tudo o que for possível, inclusive a Petrobras',s:'privatizar a Petrobras',v:{eco:1.9},sb:{serv:-.15,ne:-.05},a:'Defensores: eficiência, fim da interferência política, dinheiro para o caixa. Críticos: perda de controle sobre setor estratégico.'}]},
+ {id:'fisc',t:'Regra fiscal e gastos públicos',c:'Teto de gastos, arcabouço, meta de déficit zero: a disputa é entre crescer com gasto público ou com confiança do mercado.',
+  o:[{t:'Gastar mais para crescer: investimento público acima de qualquer meta',s:'gastar acima das metas fiscais',v:{eco:-1.6},cost:2,sb:{merc:-.3},a:'Defensores: o Estado puxa o crescimento e o emprego. Críticos: inflação, juros altos e dívida.'},
+     {t:'Regra fiscal flexível: meta de superávit com espaço para investimento',s:'uma regra fiscal flexível',v:{eco:.3},a:'Defensores: equilíbrio entre responsabilidade e investimento. Críticos: metas frouxas perdem credibilidade.'},
+     {t:'Teto rígido de gastos e corte de despesas',s:'um teto rígido de gastos',v:{eco:1.7},cost:-2,sb:{serv:-.2,ne:-.08},a:'Defensores: contas em dia, juros menores no longo prazo. Críticos: corte em serviços que os pobres usam.'}]},
+ {id:'renda',t:'Transferência de renda',c:'Programas como o Bolsa Família tiraram milhões da miséria e também são acusados de criar dependência. Mexer neles decide eleição no Nordeste.',
+  o:[{t:'Ampliar valor e cobertura, com renda básica universal no horizonte',s:'ampliar os programas de renda',v:{eco:-1.5},cost:2,sb:{ne:.25,per:.05},a:'Defensores: combate à fome e à desigualdade. Críticos: custo alto e risco fiscal.'},
+     {t:'Manter, com condicionalidades e porta de saída para o emprego',s:'manter o programa com porta de saída',v:{eco:.3},sb:{cm:.04},a:'Defensores: protege sem acomodar. Críticos: a porta de saída costuma ficar no papel.'},
+     {t:'Reduzir e trocar por incentivos ao emprego formal',s:'reduzir o programa de renda',v:{eco:1.6},cost:-1,sb:{ne:-.45,per:-.15},a:'Defensores: emprego dignifica mais que auxílio. Críticos: sem emprego disponível, a fome volta.'}]},
+ {id:'trab',t:'Trabalho e aplicativos',c:'A reforma trabalhista de 2017 e o trabalho por aplicativo mudaram a vida de milhões. Mais proteção ou mais flexibilidade?',
+  o:[{t:'Revogar a reforma trabalhista e fortalecer os sindicatos',s:'revogar a reforma trabalhista',v:{eco:-1.7},sb:{serv:.15,merc:-.2},a:'Defensores: recuperar direitos perdidos. Críticos: mais informalidade e custo para pequenas empresas.'},
+     {t:'Regulamentar apps com previdência mínima, sem CLT obrigatória',s:'regulamentar os aplicativos sem CLT',v:{eco:.1},sb:{per:.08},a:'Defensores: proteção sem acabar com a flexibilidade. Críticos: meia-solução para os dois lados.'},
+     {t:'Flexibilizar mais: menos encargos e livre negociação',s:'flexibilizar ainda mais o trabalho',v:{eco:1.7},sb:{serv:-.1},a:'Defensores: mais vagas e menos burocracia. Críticos: precarização e insegurança.'}]},
+ {id:'abort',t:'Aborto',c:'Hoje é permitido em casos de estupro, risco de vida da gestante e anencefalia. É um dos temas que mais mobilizam o voto religioso e o feminista.',
+  o:[{t:'Descriminalizar até a 12ª semana, como questão de saúde pública',s:'descriminalizar o aborto',v:{soc:-2},sb:{evang:-.35},a:'Defensores: mulheres pobres morrem em abortos clandestinos. Críticos: a vida começa na concepção.'},
+     {t:'Manter a lei atual e não mexer no tema',s:'manter a lei atual sobre aborto',v:{soc:.3},a:'Defensores: evita uma guerra cultural. Críticos: os dois lados acham que é fugir da questão.'},
+     {t:'Proibir em todos os casos, inclusive os hoje permitidos',s:'proibir o aborto até em caso de estupro',v:{soc:2},sb:{jov:-.25,cm:-.1},a:'Defensores: proteção absoluta da vida. Críticos: obriga vítimas de estupro a levar a gestação adiante.'}]},
+ {id:'drog',t:'Política de drogas',c:'O STF discutiu a descriminalização do porte de maconha; o Congresso reagiu. Saúde pública ou caso de polícia?',
+  o:[{t:'Descriminalizar o porte de maconha e tratar o uso como saúde',s:'descriminalizar a maconha',v:{soc:-1.4,seg:-1.2},sb:{evang:-.1},a:'Defensores: tira poder do tráfico e desafoga presídios. Críticos: estimula o consumo.'},
+     {t:'Manter a lei e focar no tratamento de dependentes',s:'manter a lei de drogas',v:{soc:.4,seg:.2},a:'Defensores: equilíbrio e cautela. Críticos: a lei atual prende o pequeno e solta o grande.'},
+     {t:'Endurecer penas para usuários e traficantes',s:'endurecer penas para usuários',v:{soc:1.4,seg:1.6},a:'Defensores: tolerância zero protege as famílias. Críticos: superlota presídios e fortalece facções.'}]},
+ {id:'arma',t:'Armas',c:'Os decretos que ampliaram o acesso a armas e sua revogação posterior viraram bandeira dos dois lados.',
+  o:[{t:'Restringir o acesso e ampliar campanhas de desarmamento',s:'restringir o acesso a armas',v:{seg:-1.6,soc:-.6},sb:{agro:-.1},a:'Defensores: menos armas, menos mortes. Críticos: o bandido continua armado.'},
+     {t:'Manter as regras atuais com fiscalização rigorosa',s:'manter as regras atuais sobre armas',v:{seg:.2},a:'Defensores: controle sem proibição. Críticos: não agrada a nenhum dos lados.'},
+     {t:'Facilitar a posse e o porte para o cidadão de bem',s:'facilitar o porte de armas',v:{seg:1.9,soc:1},sb:{agro:.1,jov:-.1},a:'Defensores: direito à legítima defesa. Críticos: armas legais acabam desviadas para o crime.'}]},
+ {id:'segp',t:'Segurança pública e crime organizado',c:'Facções controlam territórios e presídios. O medo da violência é a principal preocupação em muitas capitais.',
+  o:[{t:'Prevenção social, desmilitarizar a polícia e frear o encarceramento em massa',s:'desmilitarizar a polícia',v:{seg:-1.6},sb:{per:-.08},a:'Defensores: atacar as causas da violência. Críticos: resultados demoram e o crime cresce enquanto isso.'},
+     {t:'Integração federal, inteligência e asfixia financeira das facções',s:'integrar as polícias e investir em inteligência',v:{seg:.6},cost:1,sb:{cm:.05},a:'Defensores: ataca o dinheiro do crime. Críticos: parece técnico demais para quem tem medo agora.'},
+     {t:'Reduzir a maioridade penal e dar mais liberdade de ação à polícia',s:'reduzir a maioridade penal',v:{seg:2,soc:.6},sb:{jov:-.1},a:'Defensores: punição real e polícia respaldada. Críticos: mais letalidade policial e jovens nas facções.'}]},
+ {id:'amaz',t:'Amazônia e meio ambiente',c:'Queimadas, garimpo ilegal e terras indígenas colocam o Brasil no centro do debate climático mundial, enquanto o agro responde por boa parte do PIB.',
+  o:[{t:'Desmatamento zero, demarcação de terras indígenas e fiscalização dura',s:'desmatamento zero e demarcações',v:{amb:1.9},sb:{agro:-.25},a:'Defensores: futuro do clima e respeito aos povos originários. Críticos: trava a produção e o emprego no interior.'},
+     {t:'Bioeconomia e crédito de carbono, conciliando produção e preservação',s:'conciliar agro e preservação',v:{amb:.7},a:'Defensores: dá para produzir e preservar. Críticos: na prática, falta fiscalização.'},
+     {t:'Flexibilizar o licenciamento para expandir agro e mineração',s:'flexibilizar o licenciamento ambiental',v:{amb:-1.9},sb:{jov:-.15},a:'Defensores: riqueza e emprego no interior. Críticos: tragédias ambientais e sanções internacionais.'}]},
+ {id:'educ',t:'Educação: o que se ensina na escola',c:'Do “Escola sem Partido” às escolas cívico-militares e ao debate sobre gênero, a sala de aula virou campo de batalha.',
+  o:[{t:'Educação integral com debate sobre diversidade e gênero',s:'debater gênero e diversidade na escola',v:{soc:-1.5},sb:{evang:-.1},a:'Defensores: combate ao preconceito e à violência. Críticos: assunto da família, não da escola.'},
+     {t:'Foco em alfabetização, matemática e ensino técnico',s:'focar em alfabetização e ensino técnico',v:{soc:.2,eco:.2},sb:{cm:.04},a:'Defensores: o básico bem feito muda vidas. Críticos: evita discutir temas reais dos alunos.'},
+     {t:'Escola sem partido, ensino domiciliar e escolas cívico-militares',s:'escolas cívico-militares e ensino domiciliar',v:{soc:1.7,seg:.4},sb:{serv:-.1},a:'Defensores: disciplina e fim da doutrinação. Críticos: censura a professores e ensino militarizado.'}]},
+ {id:'inst',t:'Instituições: STF, Congresso e a “velha política”',c:'Ataques ao STF, emendas parlamentares bilionárias, reeleição e foro privilegiado: há desconfiança generalizada do sistema.',
+  o:[{t:'Defender o STF e as instituições contra ataques',s:'defender o STF',v:{inst:-1.6},sb:{per:-.05},a:'Defensores: sem instituições fortes, não há democracia. Críticos: o STF passou dos limites.'},
+     {t:'Reformar: fim da reeleição e do foro privilegiado, mandato para ministros do STF',s:'reformar o sistema político',v:{inst:.6},sb:{cm:.05},a:'Defensores: renovação sem ruptura. Críticos: depende do Congresso que se beneficia do atual modelo.'},
+     {t:'Enfrentar o STF e o “sistema”, inclusive com mudanças radicais',s:'enfrentar o STF e o sistema',v:{inst:1.9},sb:{merc:-.2,cm:-.05},a:'Defensores: o povo contra as elites de Brasília. Críticos: risco de ruptura democrática.'}]},
+ {id:'cota',t:'Cotas raciais',c:'Pretos e pardos são mais da metade da população e minoria nas universidades até poucos anos atrás. A política de cotas é renovada e contestada.',
+  o:[{t:'Manter e ampliar cotas raciais em universidades e concursos',s:'ampliar as cotas raciais',v:{soc:-1.3},a:'Defensores: reparação histórica e resultados comprovados. Críticos: divide a sociedade por raça.'},
+     {t:'Trocar por cotas sociais, baseadas em renda e escola pública',s:'trocar cotas raciais por sociais',v:{soc:.6},a:'Defensores: atende os pobres de todas as cores. Críticos: ignora o racismo que existe dentro da mesma renda.'},
+     {t:'Acabar com as cotas: só mérito',s:'acabar com as cotas',v:{soc:1.5},sb:{ne:-.08,jov:-.08},a:'Defensores: igualdade perante a lei. Críticos: o ponto de partida não é igual.'}]}
+];
+
+const PRIOS={
+ saude:{n:'Fortalecer o SUS e zerar filas',cost:2,sb:{ne:.08,per:.08,cm:.04}},
+ educ:{n:'Educação básica em tempo integral',cost:2,sb:{jov:.08,cm:.06,serv:.1}},
+ emprego:{n:'Emprego e reindustrialização',cost:1,sb:{per:.1,ne:.06,serv:.05}},
+ fome:{n:'Fome zero e segurança alimentar',cost:2,sb:{ne:.16}},
+ seg:{n:'Guerra às facções',cost:1,sb:{per:.12,cm:.07,evang:.05}},
+ fiscal:{n:'Ajuste fiscal e contas em dia',cost:-2,sb:{merc:.25,cm:.05,ne:-.08}},
+ infra:{n:'Infraestrutura, estradas e saneamento',cost:1,sb:{agro:.12,merc:.04,ne:.05}},
+ clima:{n:'Transição energética e fim do desmatamento',cost:1,sb:{jov:.16,agro:-.12}},
+ corrup:{n:'Combate à corrupção',cost:0,sb:{cm:.12,per:.05}},
+ moradia:{n:'Moradia popular',cost:2,sb:{per:.12,ne:.06}},
+ familia:{n:'Valores da família e proteção à infância',cost:0,sb:{evang:.16,jov:-.08}}
+};
+
+const AGENDAS=[
+ {id:'ne',n:'Comícios no Nordeste',ic:'🌵'},{id:'per',n:'Caminhadas nas periferias',ic:'🛵'},
+ {id:'evang',n:'Encontros com lideranças religiosas',ic:'⛪'},{id:'agro',n:'Feiras do agro no interior',ic:'🌾'},
+ {id:'cm',n:'Sabatinas e entrevistas em capitais',ic:'🏙️'},{id:'jov',n:'Universidades e eventos culturais',ic:'🎓'},
+ {id:'serv',n:'Assembleias com sindicatos',ic:'🏛️'},{id:'merc',n:'Jantares com empresários',ic:'📈'}
+];
+const INTENS=[{n:'Enxuta',c:0,m:1,d:'Sem gastar recursos'},{n:'Normal',c:1,m:1.6,d:'1 ponto de recurso'},{n:'Máxima',c:2,m:2.3,d:'2 pontos de recurso'}];
+
+const K=1.3,NULU=-1.7;
+function dist(pos,s){let d=0;for(const a of AX)d+=s.sal[a]*Math.abs((pos[a]||0)-s.ideal[a]);return d;}
+function util(c,s){return -0.8*dist(c.pos,s)+c.ap+(c.sb[s.id]||0)+(c.fame||0)-(c.rej||0)*0.012;}
+function shares(cands){
+  const tot={},bySeg={};cands.forEach(c=>tot[c.id]=0);let nul=0;
+  for(const s of SEGS){
+    const us=cands.map(c=>Math.exp(K*util(c,s)));const un=Math.exp(K*NULU);const T=us.reduce((a,b)=>a+b,0)+un;
+    bySeg[s.id]={};cands.forEach((c,i)=>{const p=us[i]/T;tot[c.id]+=s.sh*p;bySeg[s.id][c.id]=p*T/(T-un);});nul+=s.sh*un/T;
+  }
+  const valid={};cands.forEach(c=>valid[c.id]=tot[c.id]/(1-nul)*100);
+  return {valid,nul:nul*100,bySeg};
+}
+function rejOf(c){let r=0;for(const s of SEGS){r+=s.sh/(1+Math.exp(-(dist(c.pos,s)-2.7)*1.7));}return Math.max(2,Math.min(80,r*70+(c.rej||0)));}
+function axDist(a,b){let d=0;for(const x of AX)d+=Math.abs((a[x]||0)-(b[x]||0));return d;}
+// ===== ENGINE END =====
+
+// ===== ESTADO =====
+const SAVE_KEY='rumo-planalto-v3';
+let S;
+function fresh(){
+  S={v:3,phase:'intro',quick:false,preset:null,
+    p:{av:{skin:2,hair:'lateral',hc:0,cloth:'terno',cc:0,acc:'nenhum',touched:false},nome:'',g:'o',num:'',slogan:'',label:null,party:null,vice:null,mkt:null,deb:null,ans:{},prios:[],pos:{eco:0,soc:0,seg:0,amb:0,inst:0},
+       sb:{},ap:0,fame:-.55,rej:0,money:0,coh:0,cost:0,warn:[],flags:{},debScore:[]},
+    opps:OPPS.map(o=>JSON.parse(JSON.stringify(o))),strat:{},stratOk:{},qi:0,week:0,hist:[],news:[],log:[],fx:[],lastFx:[],
+    ev:null,evPick:null,evChoice:null,evD:0,agenda:null,intens:0,usedEv:[],deb:null,r1:null,r2:null,rival:null,allies:{},final:null,review:false};
+}
+function save(){
+  if(!S||S.phase==='intro')return;
+  try{const txt=JSON.stringify(S,(k,v)=>{if(k==='ev')return v?v.id:null;if((k==='o'||k==='th')&&v&&typeof v==='object'&&v.id)return v.id;return v;});localStorage.setItem(SAVE_KEY,txt);}catch(e){}
+}
+function loadSave(){
+  try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const c=JSON.parse(t);if(!c||c.v!==3||c.phase==='intro')return null;
+    c.ev=c.ev?EVENTS.find(e=>e.id===c.ev)||null:null;
+    if(c.deb&&c.deb.qs)c.deb.qs.forEach(q=>{q.o=c.opps.find(x=>x.id===q.o);q.th=THEMES.find(t=>t.id===q.th);});
+    return c;}catch(e){return null;}
+}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+fresh();
+
+const $=id=>document.getElementById(id);
+const app=()=>$('app');
+const cl=(x,a,b)=>Math.max(a,Math.min(b,x));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const fmt=x=>x.toFixed(1).replace('.',',');
+const fdel=d=>Math.abs(d)<.05?'≈ 0':(d>0?'+':'−')+fmt(Math.abs(d))+(Math.abs(d)>=.95&&Math.abs(d)<1.05?' ponto':' pontos');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const low=s=>s[0].toLowerCase()+s.slice(1);
+const cand=()=>S.p.g==='a'?'Candidata':'Candidato';
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+function addSb(obj,m=1){for(const k in obj)S.p.sb[k]=(S.p.sb[k]||0)+obj[k]*m;}
+
+function render(html,keep){
+  const ae=document.activeElement;const k=ae&&ae.dataset?ae.dataset.k:null;const y=window.scrollY;
+  app().innerHTML=keep?html:'<div class="fade">'+html+'</div>';
+  if(keep){window.scrollTo(0,y);if(k){const el=app().querySelector('[data-k="'+k+'"]');if(el&&!el.disabled)el.focus({preventScroll:true});}}
+  else{window.scrollTo(0,0);const h=app().querySelector('h1,h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true});$('live').textContent=h.textContent;}}
+  save();
+}
+function focusEl(id){setTimeout(()=>{const el=$(id);if(!el)return;if(!el.hasAttribute('tabindex')&&!/BUTTON|INPUT/.test(el.tagName))el.setAttribute('tabindex','-1');el.focus({preventScroll:true});el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});},30);}
+function chip(label,sel,act,k){return `<button type="button" class="chip ${sel?'sel':''}" aria-pressed="${!!sel}" data-k="${k}" onclick="${act}">${label}</button>`;}
+
+function me(){return {id:'eu',nome:S.p.nome||'Você',pos:S.p.pos,ap:pAppeal(),sb:S.p.sb,fame:S.p.fame,rej:S.p.rej};}
+function pAppeal(){const m=MKTS[S.p.mkt];return .18+S.p.ap+(m?m.ap:0)-S.p.coh;}
+function active(){return [me(),...S.opps.filter(o=>!o.out)];}
+function byId(id){return id==='eu'?me():S.opps.find(o=>o.id===id);}
+function nameOf(id){return id==='eu'?(S.p.nome||'Você'):S.opps.find(o=>o.id===id).nome;}
+function shortOf(id){return id==='eu'?'Você':S.opps.find(o=>o.id===id).nome.split(' ')[0];}
+function colorOf(id){return id==='eu'?'var(--yellow)':S.opps.find(o=>o.id===id).cor;}
+const DASH={eu:'',sev:'',cor:'8 4',bea:'2 4',liv:'12 4 2 4'};
+
+function poll(cands,noise=1.2){
+  const r=shares(cands);const v={};let t=0;
+  cands.forEach(c=>{v[c.id]=Math.max(.3,r.valid[c.id]+rnd(-noise,noise));t+=v[c.id];});
+  cands.forEach(c=>v[c.id]=v[c.id]/t*100);
+  return {v,nul:r.nul,bySeg:r.bySeg,rej:Object.fromEntries(cands.map(c=>[c.id,rejOf(c)]))};
+}
+function ranking(v){return Object.keys(v).sort((a,b)=>v[b]-v[a]);}
+function myShare(){return shares(active()).valid.eu;}
+function measure(){const r=shares(active());return {v:r.valid.eu,seg:Object.fromEntries(SEGS.map(s=>[s.id,r.bySeg[s.id].eu||0]))};}
+function diff(b,a,r0,m0,f0){return {d:a.v-b.v,seg:SEGS.map(s=>[s.id,(a.seg[s.id]-b.seg[s.id])*100]),rej:rejOf(me())-r0,money:S.p.money-m0,fame:S.p.fame-f0};}
+function track(l,fn){const b=measure(),r0=rejOf(me()),m0=S.p.money,f0=S.p.fame;fn();const e=diff(b,measure(),r0,m0,f0);e.l=l;S.fx.push(e);return e;}
+function restoreInto(t,src){for(const k of Object.keys(t))if(!(k in src))delete t[k];Object.assign(t,src);}
+// simula uma ação e desfaz: mostra o impacto antes da escolha
+function preview(fn){
+  const snap=JSON.stringify({p:S.p,o:S.opps});const b=measure(),r0=rejOf(me()),m0=S.p.money,f0=S.p.fame;
+  try{fn();}catch(e){}
+  const out=diff(b,measure(),r0,m0,f0);const o=JSON.parse(snap);
+  restoreInto(S.p,o.p);S.opps.forEach((x,i)=>restoreInto(x,o.o[i]));return out;
+}
+const sgnF=d=>Math.abs(d)<.05?'≈ 0':(d>0?'+':'−')+fmt(Math.abs(d));
+const clsD=(d,t=.05)=>d>t?'up':d<-t?'down':'';
+function impBar(d,max=1.5){const w=Math.min(50,Math.abs(d)/max*50);return `<span class="ib" aria-hidden="true"><i class="${d>=0?'p':'n'}" style="width:${w}%;${d>=0?'left:50%':'right:50%'}"></i></span>`;}
+function impTags(pv,n=3){
+  const t=[];
+  pv.seg.filter(([,x])=>Math.abs(x)>=.4).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,n).forEach(([id,x])=>t.push(`<span class="tag ${x>0?'up':'down'}">${ico(id,14)} ${SEG[id].s} ${x>0?'+':'−'}${fmt(Math.abs(x))}</span>`));
+  if(Math.abs(pv.rej)>=.3)t.push(`<span class="tag ${pv.rej>0?'down':'up'}">Rejeição ${pv.rej>0?'+':'−'}${fmt(Math.abs(pv.rej))}</span>`);
+  if(pv.money)t.push(`<span class="tag ${pv.money>0?'up':'down'}">Recursos ${pv.money>0?'+':'−'}${Math.abs(pv.money)}</span>`);
+  if(pv.fame>.01)t.push(`<span class="tag up">Visibilidade +</span>`);
+  return t.join('');
+}
+function impLine(pv,lead='Votos'){return `<span class="imp"><span class="iv ${clsD(pv.d)}">${sgnF(pv.d)}</span><span class="il">${lead}</span>${impBar(pv.d)}</span><span class="it">${impTags(pv)}</span>`;}
+function impCard(pv,title,mood){return `<div class="impcard ${clsD(pv.d,.1)}">${headOf('eu',56,mood||(pv.d>.1?'happy':pv.d<-.1?'sad':'neutral'))}<div class="ibig ${clsD(pv.d)}">${sgnF(pv.d)}<small>pontos</small></div><div><b>${title}</b><div>${impTags(pv,4)||'<span class="tag">Sem efeito relevante nos grupos</span>'}</div></div></div>`;}
+
+// ===== BONECOS, ÍCONES E CENAS =====
+const SKINS=['#f7d7bd','#eab68f','#cf9467','#a86d42','#7b4a2b','#57321d'];
+const HAIRC=['#1d1a18','#4a2c1a','#8a5a2b','#d8b45e','#a5462a','#b8b8b8'];
+const CLOTHC=['#1f3a5f','#2c2f36','#7a1f3d','#1e6b4a','#b8332a','#e0b100','#5e7ea8','#f2f2f2'];
+const HAIRS={lateral:'De lado',curto:'Curto',careca:'Careca',longo:'Longo',cacheado:'Black power',coque:'Coque',rabo:'Rabo de cavalo'};
+const CLOTHS={terno:'Terno e gravata',blazer:'Blazer',camisa:'Camisa social',camiseta:'Camiseta da campanha'};
+const ACCS={nenhum:'Nenhum',oculos:'Óculos',barba:'Barba',bigode:'Bigode',oculosbarba:'Óculos e barba'};
+const OPP_AV={
+  sev:{skin:2,hair:'lateral',hc:5,cloth:'camisa',ccHex:'#f2f2f2',acc:'barba'},
+  cor:{skin:1,hair:'curto',hc:0,cloth:'terno',ccHex:'#2f4a35',acc:'bigode',tie:'#e0b100'},
+  bea:{skin:0,hair:'coque',hc:2,cloth:'blazer',ccHex:'#5f4590',acc:'oculos'},
+  liv:{skin:4,hair:'cacheado',hc:0,cloth:'camiseta',ccHex:'#2e9e5b',acc:'nenhum'}
+};
+function shade(hex,f){const n=parseInt(hex.slice(1),16);const r=Math.min(255,Math.round((n>>16)*f)),g=Math.min(255,Math.round((n>>8&255)*f)),b=Math.min(255,Math.round((n&255)*f));return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+function lum(hex){const n=parseInt(hex.slice(1),16);return (.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255;}
+function avInner(a,o={}){
+  const mood=o.mood||'neutral';const skin=SKINS[a.skin],hc=HAIRC[a.hc],cc=a.ccHex||CLOTHC[a.cc],sk2=shade(skin,.84),hc2=shade(hc,.75),cdk=shade(cc,.72);
+  let back='',front='';
+  switch(a.hair){
+    case 'longo':back=`<path d="M30 60 Q27 20 60 20 Q93 20 90 60 L93 104 Q80 100 77 84 L43 84 Q40 100 27 104 Z" fill="${hc}"/>`;front=`<path d="M33 54 Q36 26 60 26 Q84 26 87 54 Q76 36 60 37 Q46 37 33 54 Z" fill="${hc}"/>`;break;
+    case 'rabo':back=`<path d="M80 38 Q104 52 94 92 Q88 70 80 60 Z" fill="${hc}"/>`;front=`<path d="M33 56 Q32 24 60 24 Q88 24 87 56 Q84 36 60 35 Q38 36 33 56 Z" fill="${hc}"/>`;break;
+    case 'cacheado':back=`<circle cx="60" cy="46" r="37" fill="${hc}"/>`;front=`<path d="M34 50 Q40 30 60 32 Q80 30 86 50 Q80 40 70 42 Q60 36 50 42 Q40 40 34 50Z" fill="${hc}"/>`;break;
+    case 'coque':back=`<circle cx="60" cy="22" r="11" fill="${hc}"/>`;front=`<path d="M33 56 Q31 26 60 26 Q89 26 87 56 Q84 38 60 36 Q36 38 33 56 Z" fill="${hc}"/>`;break;
+    case 'curto':front=`<path d="M33 56 Q30 26 60 25 Q90 26 87 56 Q86 40 76 38 Q60 32 44 38 Q34 42 33 56 Z" fill="${hc}"/>`;break;
+    case 'lateral':front=`<path d="M33 58 Q29 27 58 24 Q90 23 87 56 Q82 36 48 39 Q37 42 33 58 Z" fill="${hc}"/><path d="M48 39 Q62 30 80 36" stroke="${hc2}" stroke-width="1.5" fill="none"/>`;break;
+    case 'careca':front=`<path d="M33 62 Q33 50 37 46 L38 64 Z M87 62 Q87 50 83 46 L82 64 Z" fill="${hc}"/>`;break;
+  }
+  let body=`<path d="M8 140 Q10 104 40 95 L80 95 Q110 104 112 140 Z" fill="${cc}"/>`;
+  if(a.cloth==='terno')body+=`<path d="M47 95 L60 122 L73 95 Z" fill="#f4f4f4"/><path d="M57 99 L63 99 L65 120 L60 127 L55 120 Z" fill="${a.tie||'#b8332a'}"/><path d="M47 95 L60 128 L40 140 M73 95 L60 128 L80 140" stroke="${cdk}" stroke-width="2" fill="none"/>`;
+  if(a.cloth==='blazer')body+=`<path d="M48 95 L60 116 L72 95 Z" fill="#f4f4f4"/><path d="M48 95 L60 126 M72 95 L60 126" stroke="${cdk}" stroke-width="2.5" fill="none"/><circle cx="60" cy="110" r="2.4" fill="#e6c35c"/>`;
+  if(a.cloth==='camisa')body+=`<path d="M50 95 L60 108 L70 95 Z" fill="${skin}"/><path d="M47 95 L57 109 L52 96 Z M73 95 L63 109 L68 96 Z" fill="${shade(cc,.88)}"/><path d="M60 109 L60 140" stroke="${shade(cc,.8)}" stroke-width="1.5"/>`;
+  if(a.cloth==='camiseta')body+=`<path d="M50 95 Q60 104 70 95" fill="${skin}" stroke="${cdk}" stroke-width="2"/>${o.num?`<text x="60" y="131" text-anchor="middle" font-family="Archivo,sans-serif" font-weight="900" font-size="20" fill="${lum(cc)>.6?'#1d2430':'#ffffff'}">${esc(o.num)}</text>`:''}`;
+  const sash=o.sash?`<path d="M82 96 L97 102 L45 140 L26 140 Z" fill="#139047"/><path d="M88 98.5 L92 100.5 L38 140 L33 140 Z" fill="#ffd23f"/><circle cx="66" cy="117" r="5" fill="#2b54a8" stroke="#ffd23f" stroke-width="1.5"/>`:'';
+  const bc=a.hair==='careca'?shade(skin,.55):hc2;
+  const brows=mood==='sad'?`<path d="M44 52 L55 48 M76 52 L65 48" stroke="${bc}" stroke-width="2.6" stroke-linecap="round"/>`:mood==='happy'?`<path d="M44 48 Q50 44 55 47 M76 48 Q70 44 65 47" stroke="${bc}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`:`<path d="M44 50 Q50 48 55 50 M76 50 Q70 48 65 50" stroke="${bc}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  const eyes=mood==='happy'?`<path d="M46 60 Q50 55 54 60 M66 60 Q70 55 74 60" stroke="#231a14" stroke-width="2.6" fill="none" stroke-linecap="round"/>`:`<circle cx="50" cy="59" r="3" fill="#231a14"/><circle cx="70" cy="59" r="3" fill="#231a14"/>`;
+  const mouth=mood==='happy'?`<path d="M49 73 Q60 87 71 73 Q60 77 49 73Z" fill="#8a2b2b"/><path d="M52 74.5 Q60 77 68 74.5 L67 76.5 Q60 78.5 53 76.5Z" fill="#fff"/>`:mood==='sad'?`<path d="M51 80 Q60 72 69 80" stroke="#6b2a22" stroke-width="2.6" fill="none" stroke-linecap="round"/>`:`<path d="M52 76 Q60 79 68 76" stroke="#6b2a22" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  const beard=(a.acc==='barba'||a.acc==='oculosbarba')?`<path d="M35 62 Q37 93 60 93 Q83 93 85 62 Q80 78 70 80 Q60 84 50 80 Q40 78 35 62Z" fill="${hc}"/>`:'';
+  const must=a.acc==='bigode'?`<path d="M49 71 Q60 64 71 71 Q60 73 49 71Z" fill="${hc}"/>`:'';
+  const glass=(a.acc==='oculos'||a.acc==='oculosbarba')?`<circle cx="50" cy="59" r="7.5" fill="rgba(255,255,255,.18)" stroke="#202020" stroke-width="2"/><circle cx="70" cy="59" r="7.5" fill="rgba(255,255,255,.18)" stroke="#202020" stroke-width="2"/><path d="M57.5 59 L62.5 59" stroke="#202020" stroke-width="2"/>`:'';
+  const cheeks=mood==='happy'?`<circle cx="43" cy="68" r="4.5" fill="#e0706a" opacity=".28"/><circle cx="77" cy="68" r="4.5" fill="#e0706a" opacity=".28"/>`:'';
+  return `${back}<rect x="52" y="78" width="16" height="22" fill="${sk2}"/>${body}${sash}<circle cx="34" cy="62" r="6" fill="${sk2}"/><circle cx="86" cy="62" r="6" fill="${sk2}"/><ellipse cx="60" cy="58" rx="26" ry="30" fill="${skin}"/>${front}${cheeks}${brows}${eyes}<path d="M60 61 Q56 69 61 70" stroke="${sk2}" stroke-width="2" fill="none" stroke-linecap="round"/>${beard}${mouth}${must}${glass}`;
+}
+function avatar(a,o={}){
+  const s=o.size||120;const head=o.head;
+  return `<svg class="av" viewBox="${head?'22 16 76 76':'0 0 120 140'}" width="${s}" height="${head?s:Math.round(s*140/120)}" ${o.label?`role="img" aria-label="${esc(o.label)}"`:'aria-hidden="true"'}>${avInner(a,o)}</svg>`;
+}
+function avOf(id){return id==='eu'?S.p.av:OPP_AV[id];}
+function numOf(id){return id==='eu'?S.p.num:String(S.opps.find(o=>o.id===id).num);}
+function moodOf(id){const H=S.hist;if(!H||H.length<2)return 'neutral';const d=(H[H.length-1].v[id]||0)-(H[H.length-2].v[id]||0);return d>.8?'happy':d<-.8?'sad':'neutral';}
+function headOf(id,size=30,mood){return avatar(avOf(id),{head:true,size,mood:mood||moodOf(id),num:numOf(id)});}
+
+const ICO={
+  evang:'<path d="M12 2v4M10 4h4M5 21V11l7-5 7 5v10M10 21v-5h4v5"/>',
+  ne:'<circle cx="17.5" cy="5.5" r="2.5"/><path d="M9 21V7a2 2 0 0 1 4 0v14M9 14H6v-4M13 12h3V9M4 21h16"/>',
+  agro:'<path d="M12 22V9M12 9c-3-1-4-4-4-6 3 1 4 3 4 6zm0 0c3-1 4-4 4-6-3 1-4 3-4 6M12 15c-3-1-5-3-5-6 3 1 5 3 5 6zm0 0c3-1 5-3 5-6-3 1-5 3-5 6"/>',
+  cm:'<path d="M3 21h18M5 21V8h6v13M11 21V3h8v18M7 11h2M7 15h2M14 7h2M14 11h2M14 15h2"/>',
+  jov:'<path d="M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5M22 9v6"/>',
+  serv:'<path d="M3 21h18M4 10h16M12 3l9 5H3zM6 10v9M10 10v9M14 10v9M18 10v9"/>',
+  merc:'<path d="M3 3v18h18M7 15l4-4 3 3 6-7M16 7h4v4"/>',
+  per:'<path d="M3 11l9-7 9 7M5 9v12h14V9M10 21v-6h4v6"/>',
+  siren:'<path d="M6 18v-6a6 6 0 0 1 12 0v6M4 18h16v3H4zM12 2v2M4 6l1.5 1.5M20 6l-1.5 1.5"/>',
+  chart:'<path d="M3 3v18h18M7 7l4 5 3-3 6 8M20 13v4h-4"/>',
+  truck:'<path d="M1 6h13v10H1zM14 10h4l4 4v2h-8z"/><circle cx="5" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',
+  phone:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4M9.5 8l5 5M14.5 8l-5 5"/>',
+  wave:'<path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 21c3 0 3-2 6-2s3 2 6 2 3-2 6-2M12 2l-4 6a4 4 0 1 0 8 0z"/>',
+  hand:'<path d="M2 11l4-4 6 3 6-3 4 4-7 7-3-2-3 2z"/>',
+  mega:'<path d="M3 10v4h4l8 5V5L7 10zM18 8a5 5 0 0 1 0 8"/>',
+  tv:'<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M8 2l4 4 4-4"/>',
+  note:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  cross:'<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
+  shield:'<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/>',
+  flame:'<path d="M12 2c3 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-3-1-5 0-7z"/>',
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>'
+};
+const EVICO={'Operação policial':'siren','Economia':'chart','Crise':'truck','Desinformação':'phone','Tragédia':'wave','Bastidores':'hand','Apoio':'hand','Escândalo':'mic','Mobilização':'mega','Passado':'tv','Cultura':'note','Saúde':'cross','Violência':'shield','Ataque':'mega','Meio ambiente':'flame','Vazamento':'phone','Denúncia':'siren'};
+function ico(k,size=18){return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[k]||''}</svg>`;}
+
+// cena do Planalto com os candidatos
+const FALL=[[40,0,'#ffd23f',9],[120,-4,'#d0453b',11],[205,-7,'#ffd23f',8],[290,-2,'#2b6cb0',10],[360,-5,'#ffd23f',12],[440,-8,'#7b5ea7',9],[520,-1,'#ffd23f',10],[600,-6,'#2e9e5b',11],[680,-3,'#ffd23f',9],[750,-9,'#d0453b',12],[820,-2,'#ffd23f',10],[900,-6,'#2b6cb0',8],[960,-4,'#ffd23f',11],[170,-10,'#2e9e5b',13],[560,-11,'#ffd23f',12],[870,-12,'#7b5ea7',10]];
+function planalto(){
+  let cols='';for(let i=0;i<10;i++){const x=150+i*70;cols+=`<path d="M${x} 246 L${x+70} 246 Q${x+40} 300 ${x+35} 422 Q${x+30} 300 ${x} 246 Z" style="fill:var(--bldg)"/>`;}
+  return `<rect x="0" y="410" width="1000" height="150" style="fill:var(--lawn)"/>
+  <rect x="190" y="248" width="620" height="84" style="fill:var(--glass)"/>
+  <rect x="140" y="232" width="720" height="16" style="fill:var(--bldg)"/>
+  <rect x="160" y="330" width="680" height="12" style="fill:var(--bldg)"/>
+  ${cols}
+  <path d="M470 342 L560 342 L470 432 L362 432 Z" style="fill:var(--bldg)"/><path d="M362 432 L470 432 L470 438 L356 438Z" style="fill:var(--glass)" opacity=".5"/>
+  <line x1="910" y1="168" x2="910" y2="420" stroke="#8b8f98" stroke-width="4"/>
+  <rect x="912" y="170" width="66" height="44" fill="#139047"/><path d="M945 174 L974 192 L945 210 L916 192Z" fill="#ffd23f"/><circle cx="945" cy="192" r="9" fill="#2b54a8"/>`;
+}
+function santinhosRain(){
+  return FALL.map(([x,dl,c,dur])=>`<g transform="translate(${x} 0)"><g class="fall" style="animation-delay:${dl}s;animation-duration:${dur}s;--y:${60+((x*7)%300)}px"><rect x="-7" y="-10" width="14" height="20" rx="1.5" fill="${c}" stroke="rgba(0,0,0,.25)" stroke-width=".8"/><rect x="-4" y="-6" width="8" height="5" fill="rgba(0,0,0,.35)"/></g></g>`).join('');
+}
+function coverScene(){
+  const lineup=[['sev',30,1.2],['cor',205,1.2],['bea',665,1.2],['liv',840,1.2]];
+  const ops=lineup.map(([id,x,s])=>`<g transform="translate(${x} ${560-140*s}) scale(${s})">${avInner(OPP_AV[id],{mood:'neutral',num:String(OPPS.find(o=>o.id===id).num)})}</g>`).join('');
+  const meG=`<g transform="translate(${500-60*1.65} ${560-140*1.65}) scale(1.65)">${avInner(S.p.av,{mood:'happy',num:S.p.num||'00'})}</g>`;
+  return `<svg class="scene" viewBox="0 0 1000 560" role="img" aria-label="Ilustração: seu boneco e os quatro adversários diante do Palácio do Planalto, sob uma chuva de santinhos">
+  <defs><linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>
+  <rect width="1000" height="560" fill="url(#skyG)"/><circle cx="820" cy="96" r="44" style="fill:var(--sun)"/>
+  ${planalto()}${santinhosRain()}${ops}${meG}</svg>`;
+}
+function victoryScene(win){
+  const meG=`<g transform="translate(${500-60*2} ${560-140*2}) scale(2)">${avInner(S.p.av,{mood:win?'happy':'sad',sash:win,num:S.p.num})}</g>`;
+  return `<svg class="scene" viewBox="0 0 1000 560" role="img" aria-label="${win?'Seu boneco com a faixa presidencial diante do Planalto':'Seu boneco, derrotado, diante do Planalto'}">
+  <defs><linearGradient id="skyV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>
+  <rect width="1000" height="560" fill="url(#skyV)"/><circle cx="820" cy="96" r="44" style="fill:var(--sun)"/>${planalto()}${win?santinhosRain():''}${meG}</svg>`;
+}
+
+// ===== POSIÇÃO E COERÊNCIA =====
+function computePos(){
+  const acc={},n={};AX.forEach(a=>{acc[a]=0;n[a]=0;});
+  for(const th of THEMES){const i=S.p.ans[th.id];if(i==null)continue;const v=th.o[i].v;for(const a in v){acc[a]+=v[a];n[a]++;}}
+  AX.forEach(a=>S.p.pos[a]=n[a]?acc[a]/n[a]:0);
+}
+function ideo(pos){return (pos.eco+pos.soc+pos.seg)/3;}
+function finalizeSetup(){
+  const p=S.p;computePos();p.sb={};p.warn=[];p.ap=0;
+  const party=PARTIES[p.party],vice=VICES[p.vice],mk=MKTS[p.mkt];
+  addSb(party.sb);addSb(vice.sb);addSb(mk.sb);
+  let cost=0;
+  for(const th of THEMES){const o=th.o[p.ans[th.id]];if(o.sb)addSb(o.sb);cost+=o.cost||0;}
+  for(const k of p.prios){addSb(PRIOS[k].sb);cost+=PRIOS[k].cost;}
+  p.cost=cost;
+  p.money=party.fundo+(vice.money||0);
+  p.tv=party.tv+(vice.tv||0);
+  p.bag=party.bag+(vice.bag||0);
+  p.fame=-.55+(vice.fame||0)+(isEasyNum(p.num)?.04:0);
+  let coh=0;const id=ideo(p.pos);
+  const dParty=Math.abs(id-party.ideo);
+  if(!party.flex&&dParty>.5){coh+=.14*(dParty-.5);p.warn.push(`Suas posições (${ideoName(id)}) não combinam com a história do ${party.sig}. Militância desconfiada e menos engajamento.`);}
+  const dLab=Math.abs(id-LABELS[p.label].v);
+  if(dLab>.6){coh+=.15*(dLab-.6);p.warn.push(`Você se declara ${LABELS[p.label].n.toLowerCase()}, mas suas propostas apontam para ${ideoName(id).toLowerCase()}. Adversários vão explorar essa contradição.`);}
+  if(p.pos.eco>.6&&cost>=3){coh+=.08;p.warn.push('Você defende uma economia liberal, mas promete gastos altos. O discurso não fecha.');}
+  if(p.pos.eco<-.6&&p.prios.includes('fiscal')){coh+=.04;p.warn.push('Ajuste fiscal como prioridade num programa estatista soa como contradição para sua própria base.');}
+  if(p.pos.soc<-.6&&p.prios.includes('familia')){coh+=.03;p.warn.push('“Valores da família” como bandeira, com posições progressistas nos costumes, pode soar oportunista.');}
+  if(cost>=5){addSb({merc:-.35,cm:-.1});p.flags.irreal=true;p.warn.push(`Seu programa tem custo fiscal alto (${cost} pontos). O mercado reage mal e os debates vão perguntar de onde sai o dinheiro.`);}
+  else if(cost<=0){addSb({merc:.12,ne:-.05});}
+  const mid=THEMES.filter(th=>p.ans[th.id]===1).length;
+  if(mid>=9){coh+=.045*(mid-8);p.warn.push(`Você ficou no meio-termo em ${mid} dos ${THEMES.length} temas. Moderação reduz rejeição, mas o eleitor não sabe o que você defende e ninguém se empolga com a sua campanha.`);}
+  // extremos aumentam rejeição
+  const ext=AX.reduce((a,x)=>a+Math.max(0,Math.abs(p.pos[x])-1.4),0);
+  p.rej=ext*4;
+  if(ext>.8)p.warn.push('Seu perfil tem posições extremas em vários temas. Isso empolga a base, mas aumenta a rejeição.');
+  p.coh=coh;
+  S.deck=buildDeck();
+}
+function ideoName(v){if(v<-1)return 'Esquerda';if(v<-.35)return 'Centro-esquerda';if(v<=.35)return 'Centro';if(v<=1)return 'Centro-direita';return 'Direita';}
+function isEasyNum(n){return n.length===2&&(n[0]===n[1]||n[1]==='0');}
+
+// ===== EVENTOS =====
+const EVENTS=[
+ {id:'pf',w:s=>1+s.p.bag*4,k:'Operação policial',t:'A Polícia Federal faz busca e apreensão na casa do tesoureiro do seu partido',
+  x:'A investigação apura desvio em contratos de obras. Seu nome não aparece, mas as manchetes ligam a campanha ao caso.',
+  o:[{t:'Defender o partido: “é perseguição política”',f:{rej:3,sb:{cm:-.12,per:-.04},ap:.01},m:'Sua base aplaude, mas o eleitor de centro torce o nariz.'},
+     {t:'Exigir afastamento e investigação completa',f:{sb:{cm:.06},money:-1,ap:-.02},m:'Gesto bem recebido pela imprensa. O partido fica irritado e corta recursos.'},
+     {t:'Silêncio total e mudar de assunto',f:{ap:-.07},m:'O silêncio vira manchete: “o que o candidato esconde?”.'}]},
+ {id:'dolar',k:'Economia',t:'Dólar dispara e o preço dos alimentos assusta',
+  x:'O arroz e a carne sobem 20% em dois meses. Os eleitores querem saber o que você fará.',
+  o:[{t:'Prometer congelar preços de combustíveis e alimentos',f:{sb:{ne:.1,per:.07,merc:-.3,cm:-.05}},m:'Popular nas ruas, desastre na Faria Lima.'},
+     {t:'Anunciar uma equipe econômica respeitada e responsabilidade fiscal',f:{sb:{merc:.18,cm:.06,ne:-.04}},m:'Mercado se acalma. O eleitor pobre quer saber quando o preço baixa.'},
+     {t:'Culpar o governo atual e prometer mudança',f:{ap:.03,rej:1},m:'Funciona como discurso, mas não convence quem quer proposta.'}]},
+ {id:'greve',k:'Crise',t:'Greve dos caminhoneiros paralisa estradas e esvazia supermercados',
+  x:'Postos sem combustível, falta de remédios. Os caminhoneiros pedem diesel mais barato.',
+  o:[{t:'Apoiar os caminhoneiros e prometer reduzir o diesel',f:{sb:{per:.08,agro:.06,merc:-.12},cost:1},m:'Você vira herói nos grupos de caminhoneiros e ganha um problema fiscal.'},
+     {t:'Defender negociação e pedir o fim dos bloqueios',f:{sb:{cm:.05,merc:.05,per:-.03}},m:'Postura de estadista, mas pouco empolgante.'},
+     {t:'Ficar em cima do muro',f:{ap:-.03},m:'Os dois lados acham que você foi fraco.'}]},
+ {id:'fake',w:s=>MKTS[s.p.mkt].digital?3:1,k:'Desinformação',t:'Vídeo falso feito com inteligência artificial mostra você ofendendo religiosos',
+  x:'O vídeo tem milhões de visualizações em grupos de mensagens antes de qualquer checagem.',
+  o:[{t:'Acionar a Justiça Eleitoral e desmentir em rede nacional',f:{money:-1,sb:{evang:-.04}},m:'O estrago é contido, mas custou caro.'},
+     {t:'Responder no mesmo tom com um vídeo contra o adversário',f:{rej:3,sb:{evang:-.08,jov:-.05},ap:.02},m:'A guerra suja engaja, mas todos saem sujos — você também.'},
+     {t:'Ignorar: “isso passa”',f:{sb:{evang:-.16,per:-.05}},m:'Não passou. Pastores comentam o vídeo nos cultos.'}]},
+ {id:'barragem',k:'Tragédia',t:'Rompimento de barragem de mineração deixa dezenas de mortos em Minas Gerais',
+  x:'A lama atinge cidades inteiras. O país está de luto.',
+  o:[{t:'Suspender a agenda, ir ao local e propor endurecer a fiscalização',f:{money:-1,sb:{cm:.06,jov:.07,agro:-.03},ap:.02},m:'Imagem de empatia e firmeza.'},
+     {t:'Culpar a mineradora e prometer punição exemplar',f:{sb:{per:.05,merc:-.05}},m:'Discurso forte, pouca proposta concreta.'},
+     {t:'Manter a agenda e emitir uma nota de pesar',f:{ap:-.06},m:'A imprensa compara sua frieza com a presença dos adversários no local.'}]},
+ {id:'centrao',k:'Bastidores',t:'Partidos do Centrão oferecem apoio em troca de ministérios',
+  x:'A aliança traz tempo de TV, palanques nos estados e dinheiro. O preço: cargos no governo e a pecha de “velha política”.',
+  o:[{t:'Aceitar: governabilidade se constrói assim',f:{money:2,fame:.08,sb:{ne:.05,agro:.05,cm:-.1,per:-.06},bag:.2},m:'Mais TV e estrutura. Nas redes, chovem memes do “toma lá, dá cá”.'},
+     {t:'Recusar publicamente: “não negocio cargos”',f:{sb:{cm:.08,per:.05}},m:'Ganha credibilidade, perde estrutura.'},
+     {t:'Negociar em silêncio',f:{money:1,flag:'segredo'},m:'O acordo sai. Por enquanto, ninguém sabe.'}]},
+ {id:'pastor',k:'Apoio',t:'Líder de uma grande igreja oferece apoio em troca de compromisso contra o aborto',
+  x:'O pastor tem milhões de seguidores e quer uma carta assinada.',
+  o:[{t:'Aceitar e assinar a carta-compromisso',f:s=>({sb:{evang:.22,jov:-.14,cm:-.03},ap:s.p.pos.soc<-.5?-.09:0}),m:'O voto religioso se aproxima. Se você é progressista nos costumes, a contradição vira manchete.'},
+     {t:'Agradecer, mas não assinar compromissos religiosos',f:{sb:{evang:-.04,cm:.04}},m:'Elegante, mas o pastor apoia outro candidato.'},
+     {t:'Recusar e defender o Estado laico',f:{sb:{evang:-.14,jov:.1}},m:'A juventude aplaude; os templos fecham as portas.'}]},
+ {id:'audio',w:s=>['centrao','influencer','general','pastora'].includes(s.p.vice)?2.5:1,k:'Escândalo',t:'Áudio vazado do seu vice com declarações polêmicas',
+  x:'Numa conversa privada, seu vice desdenha dos eleitores pobres. O áudio está em todos os telejornais.',
+  o:[{t:'Manter o vice e minimizar',f:{rej:3,ap:-.04},m:'O assunto rende por dias.'},
+     {t:'Trocar o vice',f:s=>{const v=VICES[s.p.vice];addSb(v.sb,-.6);return {ap:-.05,money:-1};},m:'Atitude firme, mas a chapa parece improvisada e perde parte do eleitorado do vice.'},
+     {t:'Pedir desculpas públicas em nome da chapa',f:{ap:-.02,sb:{cm:.02}},m:'O pedido de desculpas reduz o dano.'}]},
+ {id:'enchente',k:'Tragédia',t:'Enchentes históricas devastam cidades do Sul',
+  x:'Centenas de milhares de desabrigados. O país se mobiliza em doações.',
+  o:[{t:'Montar força-tarefa da campanha para doações e voluntários',f:{money:-1,ap:.06},m:'A ação concreta é reconhecida até por adversários.'},
+     {t:'Propor um fundo climático emergencial',f:{sb:{jov:.08,cm:.04,merc:-.03},cost:1},m:'Proposta séria, mas soa distante para quem perdeu a casa.'},
+     {t:'Usar a tragédia para atacar o governo',f:{rej:2,ap:.01},m:'Muitos acham oportunismo.'}]},
+ {id:'ruas',k:'Mobilização',t:'Protestos tomam as ruas contra o aumento das tarifas e a “política tradicional”',
+  x:'Começou com vinte centavos na passagem de ônibus e virou um grito contra todos os políticos.',
+  o:[{t:'Ir às ruas com os manifestantes',f:{sb:{jov:.1,per:.06,cm:-.03,merc:-.04}},m:'Você vira um rosto do movimento, e um alvo de quem quer ordem.'},
+     {t:'Pedir calma e propor diálogo com as instituições',f:{sb:{cm:.04,merc:.03,jov:-.05}},m:'Moderado demais para quem está na rua.'},
+     {t:'Defender a ordem e punição a quem depredar',f:{sb:{cm:.03,agro:.04,per:.03,jov:-.15}},m:'Agrada quem tem medo do caos, revolta a juventude.'}]},
+ {id:'antiga',k:'Passado',t:'Desenterram uma entrevista sua de 15 anos atrás com posição oposta à atual',
+  x:'No vídeo, você defende exatamente o contrário do que promete hoje sobre um tema sensível.',
+  o:[{t:'Admitir que mudou de ideia e explicar por quê',f:{sb:{cm:.04},ap:-.02},m:'Honestidade rende respeito, mas também memes.'},
+     {t:'Dizer que a fala foi tirada de contexto',f:{rej:1.5,ap:-.03},m:'Ninguém acredita muito.'},
+     {t:'Atacar a imprensa',f:{sb:{per:.04,evang:.03,cm:-.06,jov:-.05},rej:2},m:'Sua base adora; os indecisos se assustam.'}]},
+ {id:'jingle',k:'Cultura',t:'Dois artistas querem gravar seu jingle: um cantor sertanejo e um funkeiro',
+  x:'Ambos têm milhões de fãs. Você só pode escolher um.',
+  o:[{t:'Fechar com o sertanejo',f:{sb:{agro:.1,per:.04,jov:-.03},fame:.04},m:'O jingle toca em todas as rodeios e festas do interior.'},
+     {t:'Fechar com o funkeiro',f:{sb:{per:.1,jov:.07,evang:-.06},fame:.04},m:'O refrão viraliza nas periferias e nas redes.'},
+     {t:'Dispensar os dois e fazer um jingle próprio',f:{},m:'Ninguém lembra do refrão.'}]},
+ {id:'dengue',k:'Saúde',t:'Surto de dengue lota hospitais em várias capitais',
+  x:'Filas enormes e falta de leitos. A saúde vira o tema da semana.',
+  o:[{t:'Propor mutirão nacional e reforço do SUS',f:{sb:{ne:.05,per:.06,serv:.03},cost:1},m:'Proposta clara, bem recebida.'},
+     {t:'Prometer parceria com hospitais privados',f:{sb:{merc:.05,cm:.04,serv:-.06}},m:'Agrada a quem tem plano de saúde, preocupa o SUS.'},
+     {t:'Criticar a gestão atual',f:{rej:1,ap:.02},m:'Rende manchete, pouco mais.'}]},
+ {id:'faccao',k:'Violência',t:'Ataques de facções criminosas paralisam uma capital por três dias',
+  x:'Ônibus incendiados, escolas fechadas. O medo domina o noticiário.',
+  o:[{t:'Prometer Força Nacional e lei dura contra facções',f:{sb:{per:.08,cm:.06,jov:-.06}},m:'Discurso firme ressoa com quem tem medo.'},
+     {t:'Apresentar plano de inteligência e asfixia financeira do crime',f:{sb:{cm:.06,merc:.03}},m:'Elogiado por especialistas, pouco viral.'},
+     {t:'Responsabilizar a desigualdade social',f:{sb:{jov:.05,per:-.07,cm:-.05}},m:'Soa como desculpa para quem está com medo agora.'}]},
+ {id:'bolsa',k:'Ataque',t:'Adversários espalham que você vai acabar com o programa de transferência de renda',
+  x:'Carros de som no interior do Nordeste repetem a acusação.',
+  o:[{t:'Registrar em cartório o compromisso de manter o programa',f:s=>({sb:{ne:s.p.ans.renda===2?.04:.1,merc:-.04},ap:s.p.ans.renda===2?-.05:0}),m:'Se você propôs reduzir o programa, a contradição vira munição.'},
+     {t:'Explicar seu plano com calma no horário eleitoral',f:s=>({sb:{ne:s.p.ans.renda===2?-.08:.04}}),m:'Funciona se o seu plano for, de fato, manter o programa.'},
+     {t:'Ignorar a acusação',f:s=>({sb:{ne:s.p.pos.eco>.4?-.12:-.03}}),m:'Boato não respondido vira verdade.'}]},
+ {id:'queimada',k:'Meio ambiente',t:'Queimadas recordes na Amazônia viram manchete no mundo todo',
+  x:'Líderes estrangeiros ameaçam sanções e o boicote a produtos brasileiros.',
+  o:[{t:'Prometer tolerância zero com o desmatamento ilegal',f:{sb:{jov:.08,cm:.04,agro:-.08}},m:'Bem recebido lá fora e nas capitais.'},
+     {t:'Defender a soberania: “a Amazônia é nossa”',f:{sb:{agro:.08,per:.03,jov:-.1}},m:'Discurso nacionalista agrada o interior.'},
+     {t:'Propor um fundo internacional com contrapartidas',f:{sb:{merc:.04,cm:.03}},m:'Proposta técnica, pouco emocionante.'}]},
+ {id:'segredo',w:s=>s.p.flags.segredo?6:0,once:true,k:'Vazamento',t:'Vazam as mensagens do acordo secreto com o Centrão',
+  x:'Os prints mostram a negociação de ministérios em troca de apoio.',
+  o:[{t:'Admitir e defender o acordo como necessário',f:{rej:2,sb:{cm:-.08}},m:'Ao menos você não mentiu duas vezes.'},
+     {t:'Negar tudo',f:{rej:4,ap:-.07},m:'A negativa dura um dia, até surgirem novos prints.'},
+     {t:'Romper o acordo e pedir desculpas',f:{money:-1,ap:-.03,sb:{cm:.03}},m:'Perde estrutura, salva parte da credibilidade.'}]},
+ {id:'caixa2',w:s=>s.p.bag>.3?2:.4,k:'Denúncia',t:'Delação aponta caixa 2 na sua campanha',
+  x:'Um empresário afirma ter feito doações não declaradas. Não há provas por enquanto.',
+  o:[{t:'Abrir todas as contas da campanha',f:{money:-1,sb:{cm:.03},ap:-.02},m:'Transparência reduz o estrago.'},
+     {t:'Negar categoricamente',f:{rej:3,ap:-.04},m:'O caso fica em aberto até o fim da campanha.'},
+     {t:'Acusar armação dos adversários',f:{sb:{per:.03,cm:-.08},rej:2},m:'Sua base compra a versão; o centro, não.'}]}
+];
+function buildDeck(){return EVENTS.map(e=>e.id);}
+function drawEvent(){
+  const pool=EVENTS.filter(e=>!S.usedEv.includes(e.id));
+  const ws=pool.map(e=>e.w?e.w(S):1);const tot=ws.reduce((a,b)=>a+b,0);
+  let r=Math.random()*tot;for(let i=0;i<pool.length;i++){r-=ws[i];if(r<=0){S.usedEv.push(pool[i].id);return pool[i];}}
+  const e=pool[0];S.usedEv.push(e.id);return e;
+}
+function applyFx(f){
+  if(typeof f==='function')f=f(S);
+  const p=S.p;
+  if(f.ap)p.ap+=f.ap;if(f.sb)addSb(f.sb);if(f.rej)p.rej+=f.rej*(MKTS[p.mkt].rejm||1)*.8;
+  if(f.money)p.money=Math.max(0,p.money+f.money);if(f.fame)p.fame+=f.fame;if(f.bag)p.bag+=f.bag;
+  if(f.flag)p.flags[f.flag]=true;
+  if(f.cost){p.cost+=f.cost;if(p.cost>=5&&!p.flags.irreal){p.flags.irreal=true;addSb({merc:-.2});}}
+}
+
+
+
+// ===== TELAS =====
+const SCR={};
+function go(ph){S.phase=ph;SCR[ph](false);}
+function redraw(){SCR[S.phase](true);}
+
+// ----- ajuda -----
+function openHelp(){
+  const topAx=s=>Object.entries(s.sal).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([a])=>AXL[a][2].toLowerCase()).join(' e ');
+  $('helpBody').innerHTML=`
+  <div class="row between"><h2 id="helpT" style="margin:0">Como funciona</h2><button type="button" class="btn alt" onclick="$('help').close()">Fechar</button></div>
+  <h3>Objetivo</h3><p>Vencer a eleição: mais de 50% dos votos válidos no 1º turno, ou ficar entre os dois primeiros e vencer o 2º turno.</p>
+  <h3>Os oito grupos do eleitorado</h3><p class="small muted">Simplificação do eleitorado brasileiro. Cada grupo tem posições ideais e temas que pesam mais.</p>
+  ${SEGS.map(s=>`<div class="fx"><span>${ico(s.id)} <b>${s.n}</b><br><span class="small muted">Pesam mais: ${topAx(s)}</span></span><span class="tag">${Math.round(s.sh*100)}% do eleitorado</span></div>`).join('')}
+  <h3>Indicadores</h3>
+  <p><b>Intenção de voto</b> é calculada sobre votos válidos, sem brancos, nulos e indecisos. As pesquisas têm margem de erro de 2 pontos.</p>
+  <p><b>Rejeição</b> é a parcela que não votaria em você de jeito nenhum. Sobe com posições extremas, ataques e polêmicas, e pesa muito no 2º turno.</p>
+  <p><b>Visibilidade</b> mede quantos eleitores conhecem você. Cresce com tempo de TV, agenda e gastos.</p>
+  <p><b>Recursos</b> são o dinheiro da campanha. Agendas intensas gastam recursos; algumas crises também.</p>
+  <p><b>Coerência</b> compara seu rótulo, seu partido e suas propostas. Contradições custam credibilidade e pesam nos debates.</p>
+  <p><b>Custo fiscal</b> soma o custo das suas posições e prioridades. Programas caros afastam mercado e classe média.</p>
+  <h3>Sobre o modelo</h3><p class="small">Candidatos e partidos são fictícios. Os pesos são aproximações para reflexão, não pesquisas reais. A matemática tende a favorecer candidaturas coerentes e próximas do centro; eleições reais também premiam mobilização, identidade e paixão das bases.</p>
+  <p class="small muted">Seu progresso fica salvo automaticamente neste navegador.</p>`;
+  const d=$('help');if(d.showModal)d.showModal();else d.setAttribute('open','');
+}
+
+// ----- intro -----
+let SAVED=null;
+SCR.intro=function(keep){
+  render(`
+  <div class="cover">
+    ${coverScene()}
+    <div class="cover-t"><h1>Rumo ao Planalto</h1><p class="kick2">Você tem seis semanas para convencer o Brasil.</p></div>
+  </div>
+  <div style="padding:6px 0 4px">
+    <p style="font-size:1.15rem">Um simulador de campanha presidencial inspirado em trinta anos de política brasileira: Plano Real, mensalão, Lava Jato, jornadas de junho, polarização e fake news.</p>
+    <p class="muted">Você monta a chapa, define posições nos temas que dividem o país, escreve o plano de governo e enfrenta seis semanas de campanha com crises, debates e quatro adversários. Cada escolha agrada uns e afasta outros. Nenhuma resposta é a “certa”: o jogo mostra os argumentos dos dois lados para você refletir.</p>
+  </div>
+  ${SAVED?`<div class="good"><b>Você tem uma campanha em andamento${SAVED.p.nome?' de '+esc(SAVED.p.nome):''}.</b><div class="row" style="margin-top:8px"><button class="btn" data-k="cont" onclick="S=SAVED;SAVED=null;SCR[S.phase](false)">Continuar campanha</button><button class="btn alt" data-k="disc" onclick="clearSave();SAVED=null;redraw()">Descartar</button></div></div>`:''}
+  <div class="grid g2" style="margin-top:14px">
+    <button class="opt" data-k="full" onclick="startGame(false)"><b>Campanha completa</b><span class="small muted">Treze temas, um por vez, com argumentos e reação do eleitorado. Cerca de 20 minutos.</span></button>
+    <button class="opt" data-k="quick" onclick="startGame(true)"><b>Modo rápido</b><span class="small muted">Comece com um perfil pronto e ajuste o que quiser numa tela só. Cerca de 10 minutos.</span></button>
+  </div>
+  <p class="small muted" style="margin-top:14px">Candidatos e partidos são fictícios. Arquétipos inspirados no cenário político brasileiro não representam pessoas reais.</p>`,keep);
+};
+function startGame(q){clearSave();SAVED=null;fresh();S.quick=q;go('cand');}
+
+// ----- candidatura -----
+const SLOGANS=['Coragem para mudar o Brasil','O Brasil de todos','Trabalho, fé e esperança','Gente que faz','Ordem e progresso de verdade','O futuro é agora','Quem cuida do povo','Chega de mais do mesmo'];
+SCR.cand=function(keep){
+  const p=S.p;
+  render(`
+  <h2>Sua candidatura</h2>
+  <p class="muted">Quem você é na urna.</p>
+  ${avEditor()}
+  <div class="panel">
+    <label class="f" for="nm">Nome de urna</label>
+    <input class="t" id="nm" maxlength="30" value="${esc(p.nome)}" placeholder="Ex.: Ana do Povo, Dr. Ricardo Lima" oninput="S.p.nome=this.value;upSant()">
+    <span class="f" style="display:block;font-weight:700;margin:12px 0 4px" id="trL">Tratamento</span>
+    <div role="group" aria-labelledby="trL">${chip('Candidato',p.g==='o',"setG('o')",'g-o')}${chip('Candidata',p.g==='a',"setG('a')",'g-a')}</div>
+    <label class="f" for="num">Número (dois dígitos)</label>
+    <input class="t" id="num" inputmode="numeric" maxlength="2" style="max-width:120px" value="${esc(p.num)}" placeholder="00" aria-describedby="numhint numinfo" oninput="this.value=this.value.replace(/\\D/g,'');S.p.num=this.value;upSant();numHint()">
+    <p id="numhint" class="small" aria-live="polite"></p>
+    <p id="numinfo" class="small muted">No Brasil, o número do presidenciável é o do partido; aqui você escolhe. Números fáceis de lembrar, como 11 ou 30, ajudam na urna. Ocupados pelos adversários: 12, 27, 41 e 56.</p>
+    <label class="f" for="sl">Slogan</label>
+    <input class="t" id="sl" maxlength="60" value="${esc(p.slogan)}" placeholder="Escreva ou escolha uma sugestão" oninput="S.p.slogan=this.value;upSant()">
+    <div style="margin-top:6px" role="group" aria-label="Sugestões de slogan">${SLOGANS.map((s,i)=>chip(s,p.slogan===s,`S.p.slogan='${s}';redraw()`,'sl'+i)).join('')}</div>
+  </div>
+  <div id="sant"></div>
+  <div class="panel">
+    <h3 id="lbL">Como você se apresenta ao eleitor</h3>
+    <p class="small muted">É o rótulo que você assume. Se suas propostas apontarem para outro lado, os adversários vão explorar a contradição.</p>
+    <div role="group" aria-labelledby="lbL">${Object.entries(LABELS).map(([k,l])=>chip(l.n,p.label===k,`S.p.label='${k}';redraw()`,'lb-'+k)).join('')}</div>
+  </div>
+  <div class="panel">
+    <h3>Partido</h3>
+    <p class="small muted">Partidos grandes dão tempo de TV e dinheiro, mas trazem bagagem. Partidos pequenos são limpos e pobres.</p>
+    <div class="grid g2">
+    ${Object.entries(PARTIES).map(([k,pt])=>`<button class="opt ${p.party===k?'sel':''}" aria-pressed="${p.party===k}" data-k="pt-${k}" onclick="S.p.party='${k}';redraw()">
+      <b>${pt.sig}: ${pt.n}</b><span class="small muted">${pt.d}</span>
+      <span class="small" style="margin-top:8px">Tempo de TV: ${pt.tv} de 10</span>${meter(pt.tv)}
+      <span class="small">Fundo eleitoral: ${pt.fundo} de 10</span>${meter(pt.fundo)}
+      <span class="small">Escândalos no histórico: ${Math.round(pt.bag*20)} de 10</span>${meter(Math.round(pt.bag*20))}
+    </button>`).join('')}
+    </div>
+  </div>
+  <div id="err" class="warn" role="alert" style="display:none"></div>
+  <div class="row"><button class="btn alt" onclick="go('intro')">Voltar</button><button class="btn" onclick="validCand()">Montar a chapa</button></div>`,keep);
+  upSant();numHint();
+};
+function setG(g){S.p.g=g;const a=S.p.av;if(!a.touched){if(g==='a'){a.hair='longo';a.cloth='blazer';a.cc=2;}else{a.hair='lateral';a.cloth='terno';a.cc=0;}}redraw();}
+function avEditor(){
+  const a=S.p.av;
+  const sw=(arr,key,lab)=>`<div class="sws" role="group" aria-label="${lab}">`+arr.map((c,i)=>`<button type="button" class="sw ${a[key]===i?'sel':''}" style="background:${c}" aria-label="${lab}, opção ${i+1}" aria-pressed="${a[key]===i}" data-k="${key}${i}" onclick="setAv('${key}',${i})"></button>`).join('')+'</div>';
+  const ch=(obj,key)=>Object.entries(obj).map(([k,n])=>chip(n,a[key]===k,`setAv('${key}','${k}')`,key+'-'+k)).join('');
+  return `<div class="panel"><h3>Seu boneco</h3><p class="small muted">Ele aparece no santinho, nas pesquisas, nos debates e, se você vencer, com a faixa presidencial.</p>
+  <div class="aved"><div class="avprev" id="avprev">${avatar(a,{size:170,mood:'happy',num:S.p.num||'00',label:'Prévia do seu boneco'})}</div><div>
+   <span class="lbl">Tom de pele</span>${sw(SKINS,'skin','Tom de pele')}
+   <span class="lbl">Cabelo</span><div role="group" aria-label="Cabelo">${ch(HAIRS,'hair')}</div>
+   <span class="lbl">Cor do cabelo</span>${sw(HAIRC,'hc','Cor do cabelo')}
+   <span class="lbl">Roupa</span><div role="group" aria-label="Roupa">${ch(CLOTHS,'cloth')}</div>
+   <span class="lbl">Cor da roupa</span>${sw(CLOTHC,'cc','Cor da roupa')}
+   <span class="lbl">Detalhes</span><div role="group" aria-label="Detalhes">${ch(ACCS,'acc')}</div>
+   <button type="button" class="btn alt" style="margin-top:12px" data-k="rand" onclick="randAv()">Sortear visual</button>
+  </div></div></div>`;
+}
+function setAv(k,v){S.p.av[k]=v;S.p.av.touched=true;redraw();}
+function randAv(){const pick=o=>{const k=Object.keys(o);return k[Math.floor(Math.random()*k.length)];};const a=S.p.av;
+  a.skin=Math.floor(Math.random()*SKINS.length);a.hc=Math.floor(Math.random()*HAIRC.length);a.cc=Math.floor(Math.random()*CLOTHC.length);a.hair=pick(HAIRS);a.cloth=pick(CLOTHS);a.acc=pick(ACCS);a.touched=true;redraw();}
+function numHint(){const n=S.p.num,e=$('numhint');if(!e)return;let m='',c='errc';
+  if(n.length===2){if(['12','27','41','56'].includes(n))m='Esse número já pertence a um adversário.';else if(n[0]==='0')m='O número não pode começar com zero.';else if(isEasyNum(n)){m='Número fácil de lembrar: pequeno bônus de visibilidade.';c='okc';}}
+  e.textContent=m;e.className='small '+c;}
+function meter(n){let s='<span class="meter" aria-hidden="true">';for(let i=1;i<=10;i++)s+=`<i class="${i<=n?'on':''}"></i>`;return s+'</span>';}
+function santinho(){
+  const p=S.p;const pt=PARTIES[p.party];
+  return `<div class="santinho"><div class="sav">${avatar(p.av,{size:74,mood:'happy',num:p.num})}</div><div class="num" aria-label="Número ${esc(p.num||'00')}">${esc(p.num||'00')}</div><div><div class="nm">${esc(p.nome||'Seu nome')}</div><div class="sl">${esc(p.slogan||'Seu slogan')}</div><div class="pt">${cand()} a presidente${pt?', '+pt.sig:''}${p.vice?'. Vice: '+low(VICES[p.vice].n):''}</div></div></div>`;
+}
+function upSant(){const e=$('sant');if(e)e.innerHTML=santinho();const v=$('avprev');if(v)v.innerHTML=avatar(S.p.av,{size:170,mood:'happy',num:S.p.num||'00',label:'Prévia do seu boneco'});}
+function validCand(){
+  const p=S.p;const e=[];
+  if(p.nome.trim().length<2)e.push('Escreva um nome de urna.');
+  if(!/^\d\d$/.test(p.num))e.push('O número precisa ter dois dígitos.');
+  else if(['12','27','41','56'].includes(p.num))e.push(`O número ${p.num} já pertence a um adversário.`);
+  else if(p.num[0]==='0')e.push('O número não pode começar com zero.');
+  if(p.slogan.trim().length<3)e.push('Escolha um slogan.');
+  if(!p.label)e.push('Escolha como você se apresenta ao eleitor.');
+  if(!p.party)e.push('Escolha um partido.');
+  if(e.length){const x=$('err');x.style.display='block';x.innerHTML=e.join('<br>');x.scrollIntoView({block:'center'});return;}
+  go('chapa');
+}
+
+// ----- chapa -----
+SCR.chapa=function(keep){
+  const p=S.p;
+  render(`
+  <h2>Chapa e equipe</h2>
+  ${santinho()}
+  <div class="panel">
+    <h3>Vice-presidente</h3>
+    <p class="small muted">O vice serve para conquistar quem não votaria em você. Também pode ser fonte de crise.</p>
+    <div class="grid g3">${Object.entries(VICES).map(([k,v])=>`<button class="opt ${p.vice===k?'sel':''}" aria-pressed="${p.vice===k}" data-k="v-${k}" onclick="S.p.vice='${k}';redraw()"><b>${v.n}</b><span class="small muted">${v.d}</span><span style="margin-top:6px;display:block">${sbTags(v.sb)}</span>${v.tv?'<span class="tag up">+ TV e recursos</span><span class="tag down">+ risco de escândalo</span>':''}${v.fame?'<span class="tag up">+ visibilidade</span>':''}</button>`).join('')}</div>
+  </div>
+  <div class="panel">
+    <h3>Marqueteiro</h3>
+    <p class="small muted">O estilo de comunicação muda o efeito de ataques, debates e crises.</p>
+    <div class="grid g3">${Object.entries(MKTS).map(([k,m])=>`<button class="opt ${p.mkt===k?'sel':''}" aria-pressed="${p.mkt===k}" data-k="m-${k}" onclick="S.p.mkt='${k}';redraw()"><b>${m.n}</b><span class="small muted">${m.d}</span></button>`).join('')}</div>
+  </div>
+  <div class="panel">
+    <h3>Debates na TV</h3>
+    <p class="small muted">Debates podem virar uma eleição. Quem lidera às vezes prefere não arriscar, e paga o preço da cadeira vazia.</p>
+    <div class="grid g3">
+      ${[['todos','Ir a todos os debates','Dois no 1º turno e um no 2º. Mais exposição, mais risco.'],['decisivos','Só os decisivos','O último do 1º turno e o do 2º turno. Faltar ao primeiro custa um pouco.'],['nenhum','Não ir a debates','Cadeira vazia: zero risco de gafe, mas o eleitor percebe a ausência.']].map(([k,n,d])=>`<button class="opt ${p.deb===k?'sel':''}" aria-pressed="${p.deb===k}" data-k="d-${k}" onclick="S.p.deb='${k}';redraw()"><b>${n}</b><span class="small muted">${d}</span></button>`).join('')}
+    </div>
+  </div>
+  <div id="err" class="warn" role="alert" style="display:none"></div>
+  <div class="row"><button class="btn alt" onclick="go('cand')">Voltar</button><button class="btn" onclick="if(!S.p.vice||!S.p.mkt||!S.p.deb){$('err').style.display='block';$('err').textContent='Escolha vice, marqueteiro e participação em debates.';return;}S.qi=0;go(S.quick?'perfil':'temas')">Definir posições</button></div>`,keep);
+};
+function sbTags(sb){return Object.entries(sb).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="tag ${v>0?'up':'down'}">${v>0?'+':'−'} ${SEG[k].s}</span>`).join('');}
+
+// ----- temas (completo) -----
+function segScores(th,i){
+  const o=th.o[i];
+  return SEGS.map(s=>{let sc=0;for(const a in o.v){const mid=th.o[1].v[a]||0;sc+=s.sal[a]*(Math.abs(mid-s.ideal[a])-Math.abs(o.v[a]-s.ideal[a]));}sc+=(o.sb&&o.sb[s.id]||0)*3;return [s,sc];});
+}
+function reaction(th,i){
+  const r=segScores(th,i).filter(([,sc])=>Math.abs(sc)>.35).sort((a,b)=>b[1]-a[1]);
+  return r.map(([s,sc])=>`<span class="tag ${sc>0?'up':'down'}">${sc>0?'aprovam':'rejeitam'}${Math.abs(sc)>1?' fortemente':''}: ${s.s}</span>`).join('')||'<span class="tag">reação morna em todos os grupos</span>';
+}
+function provisional(ans,extra){
+  const acc={},n={};AX.forEach(a=>{acc[a]=0;n[a]=0;});const sb={};let cost=0;
+  THEMES.forEach(t=>{const idx=ans[t.id]!=null?ans[t.id]:1;const o=t.o[idx];for(const a in o.v){acc[a]+=o.v[a];n[a]++;}if(ans[t.id]!=null&&o.sb)for(const k in o.sb)sb[k]=(sb[k]||0)+o.sb[k];});
+  if(extra)for(const k in extra)sb[k]=(sb[k]||0)+extra[k];
+  const pos={};AX.forEach(a=>pos[a]=n[a]?acc[a]/n[a]:0);
+  const ext=AX.reduce((x,a)=>x+Math.max(0,Math.abs(pos[a])-1.4),0);
+  const c={id:'eu',pos,ap:.18,sb,fame:-.25,rej:ext*4};
+  const r=shares([c,...OPPS.map(o=>({...o,fame:0}))]);return {v:r.valid.eu,rej:rejOf(c),bySeg:r.bySeg,pos};
+}
+function themePv(th,i){const a1={...S.p.ans,[th.id]:i},a0={...S.p.ans,[th.id]:1};const x=provisional(a1),y=provisional(a0);return {d:x.v-y.v,rej:x.rej-y.rej};}
+SCR.temas=function(keep){
+  const th=THEMES[S.qi];const sel=S.p.ans[th.id];
+  render(`
+  <div class="row between"><h2 style="margin:0">Suas posições</h2><span class="muted">Tema ${S.qi+1} de ${THEMES.length}</span></div>
+  <div class="progress" role="progressbar" aria-valuemin="1" aria-valuemax="${THEMES.length}" aria-valuenow="${S.qi+1}" aria-label="Progresso dos temas"><i style="width:${(S.qi+1)/THEMES.length*100}%"></i></div>
+  <div class="panel">
+    <h3 style="font-size:1.35rem">${th.t}</h3>
+    <p class="muted">${th.c}</p>
+    <div class="grid" style="margin-top:12px">
+      ${th.o.map((o,i)=>{const pv=themePv(th,i);return `<button class="opt ${sel===i?'sel':''}" aria-pressed="${sel===i}" data-k="a${i}" onclick="S.p.ans['${th.id}']=${i};redraw()"><b>${o.t}</b><span class="args">${o.a}</span>
+        <span class="impbox">${i===1?'<span class="il">Referência: o meio-termo</span>':`<span class="imp"><span class="iv ${clsD(pv.d)}">${sgnF(pv.d)}</span><span class="il">votos em relação ao meio-termo</span>${impBar(pv.d)}</span>`}${Math.abs(pv.rej)>=.5?`<span class="tag ${pv.rej>0?'down':'up'}">Rejeição ${pv.rej>0?'+':'−'}${fmt(Math.abs(pv.rej))}</span>`:''}<span class="it">${reaction(th,i)}</span></span></button>`;}).join('')}
+    </div>
+    <p class="small muted">Estimativas do QG para o seu perfil atual. A conta muda conforme as outras posições.</p>
+  </div>
+  <div class="row"><button class="btn alt" onclick="if(S.qi>0){S.qi--;SCR.temas(false)}else go('chapa')">Voltar</button>
+  <button class="btn" ${sel==null?'disabled':''} onclick="if(S.qi<THEMES.length-1){S.qi++;SCR.temas(false)}else go('plano')">${S.qi<THEMES.length-1?'Próximo tema':'Montar o plano de governo'}</button></div>`,keep);
+};
+
+// ----- perfil (modo rápido) -----
+const PRESETS=[
+ {id:'esq',n:'Esquerda trabalhista',d:'Estado forte, programas sociais amplos e direitos trabalhistas; moderado nos costumes.',a:[0,0,0,0,0,1,1,0,0,1,1,0,0]},
+ {id:'cep',n:'Centro-esquerda progressista',d:'Responsabilidade fiscal com proteção social; progressista nos costumes.',a:[0,1,1,0,1,0,0,0,1,0,0,1,0]},
+ {id:'cen',n:'Centro pragmático',d:'Meio-termo em quase tudo: baixa rejeição, pouca paixão.',a:[1,1,1,1,1,1,1,1,1,1,1,1,1]},
+ {id:'lib',n:'Liberal na economia',d:'Menos Estado, privatizações e corte de gastos; moderado nos costumes.',a:[2,2,2,1,2,1,1,1,1,1,1,1,1]},
+ {id:'con',n:'Direita conservadora',d:'Mercado na economia, linha-dura na segurança e valores tradicionais.',a:[2,1,2,1,2,2,2,2,2,2,2,2,2]},
+ {id:'pop',n:'Populista antissistema',d:'Proteção social na economia, conservador nos costumes e contra o “sistema”.',a:[0,1,1,0,1,2,2,2,2,1,2,2,1]}
+];
+function applyPreset(id){const pr=PRESETS.find(x=>x.id===id);S.preset=id;THEMES.forEach((t,i)=>S.p.ans[t.id]=pr.a[i]);redraw();}
+function potentialPanel(){
+  const pv=provisional(S.p.ans);const segs=SEGS.map(s=>[s,pv.bySeg[s.id].eu]).sort((a,b)=>b[1]-a[1]);
+  return `<div class="panel" aria-live="polite"><div class="row between"><h3 style="margin:0">Potencial estimado deste perfil</h3><span><b class="bigv">${fmt(pv.v)}%</b> <span class="muted small">rejeição ${fmt(pv.rej)}%</span></span></div>
+  <p class="small muted">Antes da campanha, com visibilidade média. Onde você é mais forte e mais fraco:</p>
+  <div class="row">${segs.slice(0,2).map(([s,v])=>`<span class="tag up">${ico(s.id,14)} ${s.s} ${Math.round(v*100)}%</span>`).join('')}${segs.slice(-2).map(([s,v])=>`<span class="tag down">${ico(s.id,14)} ${s.s} ${Math.round(v*100)}%</span>`).join('')}</div></div>`;
+}
+SCR.perfil=function(keep){
+  const done=THEMES.every(t=>S.p.ans[t.id]!=null);
+  render(`
+  <h2>Perfil rápido</h2>
+  <p class="muted">Escolha um ponto de partida e ajuste os temas que quiser. No modo completo, cada tema vem com argumentos e a reação do eleitorado.</p>
+  <div class="grid g3">${PRESETS.map(pr=>`<button class="opt ${S.preset===pr.id?'sel':''}" aria-pressed="${S.preset===pr.id}" data-k="pr-${pr.id}" onclick="applyPreset('${pr.id}')"><b>${pr.n}</b><span class="small muted">${pr.d}</span></button>`).join('')}</div>
+  ${done?potentialPanel():''}
+  ${done?`<div class="panel"><h3>Ajuste fino</h3>${THEMES.map(th=>`<div class="qrow"><div class="qt" id="qt-${th.id}">${th.t}</div><div role="group" aria-labelledby="qt-${th.id}">${th.o.map((o,i)=>chip(cap(o.s),S.p.ans[th.id]===i,`S.p.ans['${th.id}']=${i};S.preset='custom';redraw()`,`q-${th.id}-${i}`)).join('')}</div></div>`).join('')}</div>`:''}
+  <div class="row" style="margin-top:14px"><button class="btn alt" onclick="go('chapa')">Voltar</button><button class="btn" ${done?'':'disabled'} onclick="go('plano')">Montar o plano de governo</button></div>`,keep);
+};
+
+// ----- plano -----
+SCR.plano=function(keep){
+  const p=S.p;let cost=0;
+  for(const th of THEMES){cost+=th.o[p.ans[th.id]].cost||0;}
+  for(const k of p.prios)cost+=PRIOS[k].cost;
+  const lvl=cost>=5?['down','Alto: o mercado vai perguntar de onde sai o dinheiro']:cost>=2?['','Moderado']:['up','Baixo: contas equilibradas, mas promessas tímidas'];
+  render(`
+  <h2>Plano de governo</h2>
+  <p class="muted">Escolha três prioridades (${p.prios.length} de 3). Elas somam ao custo das posições que você já assumiu.</p>
+  <div class="panel" aria-live="polite">
+    <div class="row between"><b>Custo fiscal do programa: ${cost} ${Math.abs(cost)===1?'ponto':'pontos'}</b><span class="tag ${lvl[0]}">${lvl[1]}</span></div>
+    <div class="bar" style="margin-top:8px"><i style="width:${cl((cost+4)/12*100,3,100)}%;background:${cost>=5?'var(--danger)':cost>=2?'var(--orange)':'var(--ok)'}"></i></div>
+  </div>
+  <div class="grid g2">
+  ${Object.entries(PRIOS).map(([k,pr])=>{const on=p.prios.includes(k);return `<button class="opt ${on?'sel':''}" aria-pressed="${on}" data-k="pr-${k}" ${!on&&p.prios.length>=3?'disabled':''} onclick="togPrio('${k}')"><b>${pr.n}</b><span class="small muted">Custo fiscal: ${pr.cost>0?'+':''}${pr.cost}</span>${(()=>{const d=provisional(S.p.ans,pr.sb).v-provisional(S.p.ans).v;return `<span class="impbox"><span class="imp"><span class="iv ${clsD(d)}">${sgnF(d)}</span><span class="il">votos</span>${impBar(d)}</span><span class="it">${sbTags(pr.sb)}</span></span>`;})()}</button>`;}).join('')}
+  </div>
+  <div class="row" style="margin-top:16px"><button class="btn alt" onclick="if(S.quick)go('perfil');else{S.qi=THEMES.length-1;go('temas')}">Voltar</button><button class="btn" ${p.prios.length!==3?'disabled':''} onclick="finalizeSetup();S.hist=[poll(active(),.6)];go('diag')">Ver diagnóstico do QG</button></div>`,keep);
+};
+function togPrio(k){const a=S.p.prios;const i=a.indexOf(k);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(k);redraw();}
+
+// ----- diagnóstico -----
+function axisChart(){
+  return AX.map(a=>{
+    const pins=S.opps.map(o=>`<span class="pin" style="left:${(o.pos[a]+2)/4*100}%;background:${o.cor}"></span>`).join('');
+    const desc=`${AXL[a][2]}: você em ${fmt(S.p.pos[a])}; `+S.opps.map(o=>`${o.nome} em ${fmt(o.pos[a])}`).join('; ')+'. Escala de −2 ('+AXL[a][0]+') a +2 ('+AXL[a][1]+').';
+    return `<div class="axis" role="img" aria-label="${desc}"><div class="lab" aria-hidden="true"><span>${AXL[a][0]}</span><b style="color:var(--ink)">${AXL[a][2]}</b><span>${AXL[a][1]}</span></div><div class="track" aria-hidden="true">${pins}<span class="pin me" style="left:${(S.p.pos[a]+2)/4*100}%"></span></div></div>`;
+  }).join('')+`<div class="small" style="margin-top:6px" aria-hidden="true"><span class="dot" style="background:var(--yellow);border:2px solid var(--yellow-ink)"></span>Você ${S.opps.map(o=>`<span style="margin-left:10px;white-space:nowrap"><span class="dot" style="background:${o.cor}"></span>${o.nome}</span>`).join('')}</div>`;
+}
+function pollBlock(pl,prev,title){
+  const ids=ranking(pl.v);
+  return `<div class="poll"><h3>${title}</h3>${ids.map(id=>{const d=prev&&prev.v[id]!=null?pl.v[id]-prev.v[id]:0;
+    return `<div class="ln"><span class="nm"><span class="hd" style="border-color:${colorOf(id)}">${headOf(id,30)}</span>${esc(nameOf(id))}</span><div class="bar" aria-hidden="true"><i style="width:${pl.v[id]}%;background:${colorOf(id)}"></i></div><span class="val">${fmt(pl.v[id])}%${prev&&Math.abs(d)>=.3?`<span class="d ${d>0?'up':'down'}"><span aria-hidden="true">${d>0?'▲':'▼'}</span><span class="sr">${d>0?'subiu':'caiu'}</span>${fmt(Math.abs(d))}</span>`:''}</span></div>`;}).join('')}
+    <p class="small muted">Votos válidos. Brancos, nulos e indecisos: ${fmt(pl.nul)}% do eleitorado. Margem de erro: 2 pontos.</p></div>`;
+}
+SCR.diag=function(keep){
+  const pl=S.hist[0];const id=ideo(S.p.pos);
+  const segs=SEGS.map(s=>[s,pl.bySeg[s.id].eu]).sort((a,b)=>b[1]-a[1]);
+  render(`
+  <h2>Diagnóstico do QG</h2>
+  ${santinho()}
+  <div class="panel"><h3>Onde você está no mapa político</h3><p class="small muted">Pelas suas propostas, seu perfil é de <b>${ideoName(id).toLowerCase()}</b>. Cada bolinha é um adversário.</p>${axisChart()}</div>
+  <div class="panel">${pollBlock(pl,null,'Primeira pesquisa, antes da campanha')}
+    <p class="small">Sua rejeição: <b>${fmt(pl.rej.eu)}%</b>. Visibilidade baixa: muita gente ainda não conhece você.</p></div>
+  <div class="panel"><h3>Seus eleitores em potencial</h3><div class="seglist">${segs.map(([s,v])=>`<div class="ln"><span>${ico(s.id)} ${s.s}</span><div class="bar" aria-hidden="true"><i style="width:${v*100}%;background:var(--ink)"></i></div><span>${Math.round(v*100)}%</span></div>`).join('')}</div>
+  <p class="small muted">Sua fatia dos votos válidos em cada grupo do eleitorado.</p></div>
+  <div class="panel"><h3>Alertas do marqueteiro</h3>${S.p.warn.length?S.p.warn.map(w=>`<div class="warn">${w}</div>`).join(''):'<div class="good">Campanha coerente: posições, partido e discurso estão alinhados.</div>'}</div>
+  <button class="btn" onclick="S.review=false;go('estrat')">Definir estratégia contra cada adversário</button>`,keep);
+};
+// ----- estratégia -----
+const STRATS={atacar:'Atacar duramente',contrastar:'Contrastar propostas',ignorar:'Ignorar',acenar:'Acenar para o eleitorado'};
+function overlap(o){const D=axDist(S.p.pos,o.pos);return D<3.2?'alta':D<6?'média':'baixa';}
+function strongSegs(o,pl){return SEGS.map(s=>[s,pl.bySeg[s.id][o.id]||0]).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0].s.toLowerCase()).join(' e ');}
+function questiona(o,st){
+  const pl=S.hist[S.hist.length-1];const lead=ranking(pl.v)[0]===o.id;const ov=overlap(o);const n=o.nome;const ele=o.g==='a'?'ela':'ele';
+  if(st==='atacar')return (ov==='alta'?`Vocês disputam o mesmo eleitor. Bater em ${n} pode trazer votos para você, mas eleitor não gosta de briga entre parecidos e sua rejeição sobe. Você tem argumento além do ataque?`
+    :`${n} fala com um eleitorado bem diferente do seu. Atacar consolida sua base e vira manchete, mas radicaliza a campanha e fecha portas para um 2º turno. É essa a eleição que você quer disputar?`)
+    +(lead?` Como ${ele} lidera, se ninguém bater, ${ele} cresce.`:'')+(MKTS[S.p.mkt].atk>1.3?' Seu marqueteiro adora isso; cuidado com a rejeição.':'');
+  if(st==='contrastar')return `Comparar propostas é mais elegante, combina com debates e não espanta indecisos. Rende pouco em manchete e só funciona se o seu plano parar em pé: ${S.p.coh>.08?'o QG vê contradições no seu programa.':'o seu está consistente.'}`;
+  if(st==='ignorar')return lead?`Ignorar quem lidera as pesquisas é arriscado: ${n} segue crescendo sem contraponto. Você confia que ${ele} vai cair sozinh${o.g}?`:`Ignorar economiza energia e evita dar palco a ${n}. Mas, se crescer no seu eleitorado, você vai reagir tarde?`;
+  return axDist(S.p.pos,o.pos)<5.5?`Acenar para os eleitores de ${n} prepara uma aliança no 2º turno e amplia seu alcance. O risco é parecer que você não tem posição própria.`:`Vocês estão em polos opostos. Acenar para o eleitorado de ${n} pode soar oportunista e irritar sua própria base. Vale o risco?`;
+}
+SCR.estrat=function(keep){
+  const pl=S.hist[S.hist.length-1];
+  const all=S.opps.every(o=>S.stratOk[o.id]);const nOk=S.opps.filter(o=>S.stratOk[o.id]).length;
+  render(`
+  <h2>${S.review?'Revisão de estratégia na metade da campanha':'Estratégia contra os adversários'}</h2>
+  <p class="muted">${S.review?'As pesquisas mudaram. Confirme ou ajuste o tratamento a cada adversário.':'Escolha como lidar com cada um. O QG vai questionar cada escolha antes de você confirmar.'} ${nOk} de ${S.opps.length} definidas.</p>
+  ${S.opps.map(o=>{const st=S.strat[o.id];const ok=S.stratOk[o.id];return `<section class="panel" aria-labelledby="op-${o.id}">
+    <div class="row between"><h3 style="margin:0;display:flex;align-items:center;gap:10px" id="op-${o.id}"><span class="hd big" style="border-color:${o.cor}">${headOf(o.id,52)}</span>${o.nome} <span class="muted" style="font-weight:600">${o.num}, ${o.sig}</span></h3><span><b>${fmt(pl.v[o.id])}%</b> <span class="muted small">rejeição ${fmt(pl.rej[o.id])}%</span></span></div>
+    <p class="small" style="margin-top:6px"><i>“${o.slogan}”</i>. ${o.arq}.</p>
+    <p class="small muted">${o.bio}</p>
+    <p class="small">Forte entre ${strongSegs(o,pl)}. Disputa de eleitorado com você: <b>${overlap(o)}</b>.</p>
+    <div class="grid g4" role="group" aria-label="Estratégia contra ${o.nome}">${Object.entries(STRATS).map(([k,n])=>{const pv=preview(()=>applyStrat(o,k,pl,ranking(pl.v)));return `<button class="opt ${st===k?'sel':''}" aria-pressed="${st===k}" data-k="st-${o.id}-${k}" onclick="S.strat['${o.id}']='${k}';delete S.stratOk['${o.id}'];redraw()"><b>${n}</b><span class="impbox">${impLine(pv,'votos por semana')}${k==='atacar'?'<span class="tag hint">provoca contra-ataques</span>':''}${k==='acenar'?'<span class="tag hint">facilita aliança no 2º turno</span>':''}</span></button>`;}).join('')}</div>
+    ${st?`<div class="qg" aria-live="polite"><b>O QG questiona</b><br>${questiona(o,st)}
+      ${ok?`<div class="good small" style="margin:10px 0 0">Estratégia definida: ${low(STRATS[st])}. Para mudar, escolha outra opção acima.</div>`
+         :`<div class="row" style="margin-top:10px"><button class="btn" data-k="ok-${o.id}" onclick="S.stratOk['${o.id}']=true;redraw()">Manter estratégia</button><button class="btn alt" data-k="re-${o.id}" onclick="delete S.strat['${o.id}'];redraw()">Reconsiderar</button></div>`}</div>`:''}
+  </section>`;}).join('')}
+  <button class="btn" ${all?'':'disabled'} onclick="confirmStrat()">${S.review?'Seguir com a campanha':'Começar a campanha'}</button>
+  ${all?'':'<p class="small muted">Confirme a estratégia para cada adversário para continuar.</p>'}`,keep);
+};
+function confirmStrat(){
+  if(!S.review){S.week=1;S.news=['Começa oficialmente a campanha. Os santinhos já estão nas ruas.'];S.ev=drawEvent();S.evPick=null;S.evChoice=null;S.agenda=null;S.intens=0;S.fx=[];S.lastFx=[];}
+  go('semana');
+}
+
+// ----- semana -----
+function fameLbl(){const f=S.p.fame;return f<-.4?'Baixa':f<-.15?'Média':f<.05?'Alta':'Muito alta';}
+function hud(){
+  const pl=S.hist[S.hist.length-1];const rk=ranking(pl.v).indexOf('eu')+1;
+  return `<div class="hud" role="region" aria-label="Painel da campanha"><div class="hudg">
+    <span class="minis"><span class="hd" style="border-color:var(--yellow-ink)">${headOf('eu',38)}</span><span class="mnum">${esc(S.p.num)}</span><span class="mnm">${esc(S.p.nome)}</span></span>
+    <span class="stat">Semana<b>${S.week} de 6</b></span>
+    <span class="stat">Posição<b>${rk}º, ${fmt(pl.v.eu)}%</b></span>
+    <span class="stat">Rejeição<b>${fmt(pl.rej.eu)}%</b></span>
+    <span class="stat">Recursos<b>${S.p.money}</b></span>
+    <span class="stat">Visibilidade<b>${fameLbl()}</b></span>
+  </div></div>`;
+}
+function historyChart(){
+  const H=S.hist;if(H.length<2)return '';
+  const ids=['eu',...S.opps.filter(o=>!o.out).map(o=>o.id)];
+  const W=640,Ht=210,pl=30,pr=128,pt=12,pb=26;const mx=Math.max(40,...H.flatMap(h=>ids.map(i=>h.v[i]||0)))+5;
+  const x=i=>pl+i*(W-pl-pr)/(H.length-1);const y=v=>Ht-pb-v/mx*(Ht-pt-pb);
+  let g='';for(let t=0;t<=mx;t+=10)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="4" y="${y(t)+4}" font-size="11" fill="var(--muted)">${t}%</text>`;
+  const lines=ids.map(id=>{const pts=H.map((h,i)=>`${x(i)},${y(h.v[id]||0)}`).join(' ');
+    return id==='eu'?`<polyline points="${pts}" fill="none" stroke="var(--yellow-ink)" stroke-width="6" stroke-linejoin="round"/><polyline points="${pts}" fill="none" stroke="var(--yellow)" stroke-width="3" stroke-linejoin="round"/>`
+      :`<polyline points="${pts}" fill="none" stroke="${colorOf(id)}" stroke-width="2.5" stroke-dasharray="${DASH[id]}" stroke-linejoin="round"/>`;}).join('');
+  const ends=ids.map(id=>({id,y:y(H[H.length-1].v[id]||0)})).sort((a,b)=>a.y-b.y);
+  for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<14)ends[i].y=ends[i-1].y+14;
+  const labels=ends.map(e=>`<text x="${W-pr+8}" y="${e.y+4}" font-size="11.5" font-weight="700" fill="var(--ink)">${esc(shortOf(e.id))} ${fmt(H[H.length-1].v[e.id])}%</text>`).join('');
+  const xl=H.map((h,i)=>`<text x="${x(i)}" y="${Ht-6}" font-size="11" text-anchor="middle" fill="var(--muted)">${i===0?'início':'S'+i}</text>`).join('');
+  const desc='Evolução das pesquisas. '+ids.map(id=>`${nameOf(id)}: `+H.map(h=>fmt(h.v[id]||0)).join(', ')).join('. ');
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="${esc(desc)}">${g}${lines}${labels}${xl}</svg></div>`;
+}
+function fxPanel(){
+  if(!S.lastFx||!S.lastFx.length||S.hist.length<2)return '';
+  const H=S.hist;const tot=H[H.length-1].v.eu-H[H.length-2].v.eu;const sum=S.lastFx.reduce((a,f)=>a+f.d,0);
+  const cls=d=>d>.05?'up':d<-.05?'down':'';
+  return `<div class="panel"><h3>O que mudou na sua intenção de voto</h3><p class="small muted">Efeito estimado de cada fator na semana passada, em pontos dos votos válidos.</p>
+  ${S.lastFx.map(f=>`<div class="fx2"><span class="fl">${esc(f.l)}</span><span class="imp"><span class="iv ${cls(f.d)}">${sgnF(f.d)}</span>${impBar(f.d)}</span><span class="it">${f.seg?impTags(f,2):''}</span></div>`).join('')}
+  <div class="fx"><span class="muted">Oscilação da pesquisa, dentro da margem de erro</span><span class="tag">${fdel(tot-sum)}</span></div>
+  <div class="fx"><span><b>Variação total na pesquisa</b></span><span class="tag ${cls(tot)}">${fdel(tot)}</span></div></div>`;
+}
+function eventCard(){
+  const e=S.ev;const done=S.evChoice!=null;const cur=done?S.evChoice:S.evPick;
+  return `<section class="event" aria-labelledby="evT"><div class="band">${ico(EVICO[e.k]||'siren',20)} Plantão da campanha: ${low(e.k)}</div><div class="evb">
+    <div class="evhead"><span class="evico" aria-hidden="true">${ico(EVICO[e.k]||'siren',44)}</span><div><h3 id="evT" style="font-size:1.3rem">${e.t}</h3><p class="muted" style="margin-bottom:0">${e.x}</p></div></div>
+    <p class="small muted" style="margin-top:12px">Impacto estimado pelo QG antes de você decidir:</p>
+    <div class="grid" role="group" aria-label="Como você reage">${e.o.map((o,i)=>{const pv=done?null:preview(()=>applyFx(o.f));return `<button class="opt ${cur===i?'sel':''}" aria-pressed="${cur===i}" data-k="ev${i}" ${done?'disabled':''} onclick="S.evPick=${i};redraw()"><b>${o.t}</b>${pv?`<span class="impbox">${impLine(pv)}</span>`:''}</button>`;}).join('')}</div>
+    ${!done&&S.evPick!=null?`<div class="row" style="margin-top:12px"><button class="btn" data-k="evok" onclick="confirmEv()">Confirmar decisão</button><span class="small muted">Depois de confirmar, não dá para voltar atrás.</span></div>`:''}
+    <div aria-live="polite">${done?`<div class="qg">${e.o[S.evChoice].m}</div>${impCard(S.evImp,'Efeito da sua decisão')}`:''}</div>
+  </div></section>`;
+}
+function confirmEv(){
+  if(S.evChoice!=null||S.evPick==null)return;const e=S.ev,i=S.evPick;S.evChoice=i;
+  S.evImp=track(`Resposta à crise: ${low(e.o[i].t)}`,()=>applyFx(e.o[i].f));
+  S.log.push(`${S.phase==='evento2'?'2º turno':'Semana '+S.week}: ${low(e.t)}. Você decidiu: ${low(e.o[i].t)}.`);
+  redraw();focusEl(S.phase==='evento2'?'next2':'agT');
+}
+function affLbl(id){const d=dist(S.p.pos,SEG[id]);return d<1.6?'alta':d<2.8?'média':'baixa';}
+SCR.semana=function(keep){
+  const pl=S.hist[S.hist.length-1];const prev=S.hist.length>1?S.hist[S.hist.length-2]:null;
+  const debNext=(S.week===2&&S.p.deb==='todos')||(S.week===5&&S.p.deb!=='nenhum');
+  const done=S.evChoice!=null;
+  render(`${hud()}
+  <h2 class="sr">Semana ${S.week} de campanha</h2>
+  ${fxPanel()}
+  <div class="panel">${pollBlock(pl,prev,S.week===1?'Pesquisa de largada':'Pesquisa da semana')}${historyChart()}</div>
+  ${S.news.length?`<div class="panel quiet"><h3>Nos bastidores</h3>${S.news.map(n=>`<div class="news">${n}</div>`).join('')}</div>`:''}
+  <p class="small muted" style="margin-top:18px"><b>Passo 1 de 2:</b> responda à crise da semana.</p>
+  ${eventCard()}
+  ${done?`<p class="small muted" style="margin-top:18px"><b>Passo 2 de 2:</b> defina a agenda.</p>
+  <div class="panel">
+    <h3 id="agT">Agenda da semana</h3>
+    <p class="small muted">Onde você vai fazer campanha? A agenda rende mais onde suas propostas já têm afinidade.</p>
+    <div class="grid g3">${AGENDAS.map(a=>{const pv=preview(()=>applyAgenda(a.id,S.intens));return `<button class="opt ${S.agenda===a.id?'sel':''}" aria-pressed="${S.agenda===a.id}" data-k="ag-${a.id}" onclick="S.agenda='${a.id}';redraw()"><b><span class="segi">${ico(a.id,20)}</span> ${a.n}</b><span class="small muted">Afinidade ${affLbl(a.id)}. Você tem ${Math.round(pl.bySeg[a.id].eu*100)}% ali.</span><span class="impbox">${impLine(pv)}</span></button>`;}).join('')}</div>
+    <h3 style="margin-top:14px">Intensidade</h3>
+    <p class="small muted">Você tem ${S.p.money} ${S.p.money===1?'ponto':'pontos'} de recurso para o resto da campanha.</p>
+    <div class="grid g3">${INTENS.map((t,i)=>`<button class="opt ${S.intens===i?'sel':''}" aria-pressed="${S.intens===i}" data-k="in-${i}" ${t.c>S.p.money?'disabled':''} onclick="S.intens=${i};redraw()"><b>${t.n}</b><span class="small muted">${t.c>S.p.money?'Recursos insuficientes':t.d}</span>${S.agenda&&t.c<=S.p.money?`<span class="impbox">${impLine(preview(()=>applyAgenda(S.agenda,i)))}</span>`:''}</button>`).join('')}</div>
+  </div>
+  <button class="btn" ${!S.agenda?'disabled':''} onclick="endWeek()">${S.week<6?(debNext?'Encerrar semana e ir ao debate':'Encerrar a semana'):'Ir para o dia da eleição'}</button>
+  ${!S.agenda?'<p class="small muted">Escolha uma agenda para encerrar a semana.</p>':''}`:''}`,keep);
+};
+
+function applyAgenda(id,ii){
+  const p=S.p,mk=MKTS[p.mkt],it=INTENS[ii];
+  p.money-=it.c;const aff=cl(1.15-dist(p.pos,SEG[id])/4,.25,1);
+  addSb({[id]:.055*it.m*aff});
+  p.fame+=.035*it.m+p.tv*.006+(mk.digital?.015:0);
+  if(PARTIES[p.party].sig==='RPS')addSb({jov:.01});
+}
+function applyStrat(o,st,pl,rk){
+  const p=S.p,mk=MKTS[p.mkt],D=axDist(p.pos,o.pos);
+  if(st==='atacar'){o.ap-=.05*mk.atk;p.rej+=.7*mk.rejm;
+    if(D<3.2)p.ap+=.025;else{for(const s of SEGS){const ds=dist(o.pos,s);addSb({[s.id]:ds>2.5?.012:-.012});}}
+    o.angry=(o.angry||0)+1;}
+  else if(st==='contrastar'){o.ap-=.02*(p.mkt==='tec'?1.4:1);p.ap+=p.coh>.08?0:.012;}
+  else if(st==='ignorar'){if(rk[0]===o.id)o.ap+=.025;else p.ap+=.006;}
+  else if(st==='acenar'){const top=SEGS.map(s=>[s.id,pl.bySeg[s.id][o.id]]).sort((a,b)=>b[1]-a[1]).slice(0,2);
+    if(D<5.5){top.forEach(([sid])=>addSb({[sid]:.025}));o.friend=(o.friend||0)+1;}else{p.ap-=.02;}}
+}
+function weekDynamics(){
+  const p=S.p;const news=[];
+  const it=INTENS[S.intens];const ag=AGENDAS.find(a=>a.id===S.agenda);
+  track(`Agenda: ${low(ag.n)}, intensidade ${low(it.n)}`,()=>applyAgenda(S.agenda,S.intens));
+  const pl=S.hist[S.hist.length-1];const rk=ranking(pl.v);
+  for(const o of S.opps){if(o.out)continue;const st=S.strat[o.id];
+    track(`Estratégia contra ${o.nome}: ${low(STRATS[st])}`,()=>applyStrat(o,st,pl,rk));
+    if(st==='atacar')news.push(`Sua campanha bateu forte em ${o.nome}.`);
+  }
+  track('Campanha e ataques dos adversários',()=>{
+    for(const o of S.opps){if(o.out)continue;o.ap+=rnd(-.035,.045);
+      const base=OPPS.find(x=>x.id===o.id).sb;for(const k in base)o.sb[k]+=.025;
+      const myRk=rk.indexOf(o.id);
+      let target=o.angry&&Math.random()<.65?'eu':(myRk===0?rk[1]:rk[0]);
+      if(o.friend&&target==='eu'&&Math.random()<.6)target=myRk===0?rk[1]:rk[0];
+      if(target==='eu'){p.ap-=.025+(o.angry?.015:0);news.push(`${o.nome} usou o horário eleitoral para atacar você.`);}
+      else if(target&&target!==o.id){const t=S.opps.find(x=>x.id===target);if(t){t.ap-=.02;if(Math.random()<.5)news.push(`${o.nome} mirou em ${t.nome} nas redes.`);}}
+    }
+  });
+  return news;
+}
+function endWeek(){
+  if(!S.agenda||S.evChoice==null)return;
+  const prevPl=S.hist[S.hist.length-1];
+  const news=weekDynamics();
+  const debNow=(S.week===2&&S.p.deb==='todos')||(S.week===5&&S.p.deb!=='nenhum');
+  const debMissed=(S.week===2&&S.p.deb!=='todos')||(S.week===5&&S.p.deb==='nenhum');
+  if(debMissed){const lead=ranking(prevPl.v)[0]==='eu';track('Ausência no debate (cadeira vazia)',()=>{S.p.ap-=lead?.01:.035;});news.push('Você faltou ao debate. A cadeira vazia virou meme e assunto dos adversários.');S.log.push(`Faltou ao debate da semana ${S.week}.`);}
+  S.hist.push(poll(active()));S.news=news;S.lastFx=S.fx;S.fx=[];
+  if(debNow){startDebate(false);return;}
+  advanceWeek();
+}
+function advanceWeek(){
+  if(S.week>=6){runRound1();return;}
+  S.week++;S.ev=drawEvent();S.evPick=null;S.evChoice=null;S.agenda=null;S.intens=0;
+  if(S.week===4){S.review=true;S.stratOk={};go('estrat');return;}
+  go('semana');
+}
+// ----- debate -----
+const DEBR={
+  dados:{n:'Defender minha posição com dados e propostas',mk:['tec']},
+  conv:{n:'Defender minha posição com convicção e emoção',mk:['emo','pop']},
+  moderar:{n:'Moderar o discurso e mostrar disposição ao meio-termo',mk:[]},
+  ataque:{n:'Devolver com um ataque ao adversário',mk:['desc']},
+  fugir:{n:'Desviar do tema e falar do meu plano',mk:[]}
+};
+function oppAnswer(o,th){const a=Object.keys(th.o[0].v)[0];let best=0,bd=99;th.o.forEach((op,i)=>{const d=Math.abs(op.v[a]-o.pos[a]);if(d<bd){bd=d;best=i;}});return best;}
+function hurtSeg(th,i){const o=th.o[i];let best=null,bs=-1;for(const s of SEGS){let sc=0;for(const a in o.v)sc+=s.sal[a]*Math.abs(o.v[a]-s.ideal[a])*s.sh;if(sc>bs){bs=sc;best=s;}}return best;}
+function baseSeg(th,i){const r=segScores(th,i).map(([s,sc])=>[s,sc*s.sh]).sort((a,b)=>b[1]-a[1]);if(r[0][1]>0)return r[0][0];
+  const o=th.o[i];let best=SEGS[0],bd=99;for(const s of SEGS){let d=0;for(const a in o.v)d+=Math.abs(o.v[a]-s.ideal[a]);if(d<bd){bd=d;best=s;}}return best;}
+function startDebate(second){
+  const opps=second?[S.opps.find(o=>o.id===S.rival)]:S.opps.filter(o=>!o.out);
+  const qs=[];const used=new Set();
+  const order=second?[opps[0],opps[0],opps[0]]:shuffle([...opps]).slice(0,3);
+  for(const o of order){
+    let best=null,bd=-1;for(const th of THEMES){if(used.has(th.id))continue;const d=Math.abs(S.p.ans[th.id]-oppAnswer(o,th))+Math.random()*.6;if(d>bd){bd=d;best=th;}}
+    used.add(best.id);qs.push({o,th:best,tpl:Math.floor(Math.random()*4)});
+  }
+  if(S.p.flags.irreal)qs[qs.length-1].fiscal=true;
+  S.deb={second,qs,i:0,res:[],score:0,start:myShare()};
+  go('debate');
+}
+function pergunta(q){
+  const tr=cap(S.p.g==='a'?'candidata':'candidato');const th=q.th;const mi=S.p.ans[th.id];const hs=hurtSeg(th,mi);const os=th.o[oppAnswer(q.o,th)].s;const ms=th.o[mi].s;
+  if(q.fiscal)return `${tr}, seu programa custa uma fortuna. De onde vai sair o dinheiro? Vai aumentar imposto ou deixar a inflação voltar?`;
+  if(mi===oppAnswer(q.o,th))return `${tr}, nós dois defendemos ${ms}. Mas por que o eleitor acreditaria em você, que nunca colocou isso em prática?`;
+  return [`${tr}, você defende ${ms}. Como vai explicar isso para ${low(hs.n)}?`,
+    `Eu defendo ${os}; você defende ${ms}. O eleitor merece saber: por que a sua ideia é melhor do que a minha?`,
+    `${tr}, ${ms} é uma aposta arriscada. E se der errado? Quem mais perde é este eleitorado: ${low(hs.n)}.`,
+    `${tr}, até parte do seu eleitorado desconfia da ideia de ${ms}. Você vai mesmo insistir nisso?`][q.tpl];
+}
+function hints(k,q){
+  const p=S.p,h=[];
+  if(DEBR[k].mk.includes(p.mkt))h.push('ponto forte do seu marqueteiro');
+  if(k==='dados'&&p.coh>.08)h.push('risco: seu programa tem contradições');
+  if(k==='dados'&&q.fiscal&&p.flags.irreal)h.push('risco: promessas caras');
+  if(k==='moderar'&&p.ans[q.th.id]===1&&!q.fiscal)h.push('você já está no meio-termo');
+  if(k==='moderar'&&p.ans[q.th.id]!==1&&!q.fiscal)h.push('pode irritar sua base');
+  if(k==='ataque'&&MKTS[p.mkt].rejm>1.2)h.push('eleva a rejeição');
+  if(k==='fugir')h.push('seguro, mas custa pontos');
+  return h.map(x=>`<span class="tag hint">${x}</span>`).join('');
+}
+SCR.debate=function(keep){
+  const d=S.deb;const q=d.qs[d.i];const done=d.res.length>d.i;const th=q.th;
+  render(`
+  <h2>${d.second?'Debate final do 2º turno':'Debate na TV'}</h2>
+  <p class="muted">Pergunta ${d.i+1} de ${d.qs.length}. ${['Estúdio lotado, milhões assistindo.','Os assessores roem as unhas nos bastidores.','Última pergunta: é o que o eleitor vai lembrar.'][d.i]}</p>
+  <div class="stage" aria-hidden="true">
+    <div class="pod">${avatar(OPP_AV[q.o.id],{size:120,mood:done?(d.res[d.i].ok?'sad':'happy'):'neutral',num:String(q.o.num)})}<div class="podium" style="border-top-color:${q.o.cor}">${q.o.num}</div><span class="pn">${q.o.nome}</span></div>
+    <div class="bubble">${q.fiscal?'“Seu programa não fecha a conta!”':S.p.ans[th.id]===oppAnswer(q.o,th)?'“Nós dois defendemos a mesma coisa. Mas quem faz de verdade?”':`“Eu defendo ${th.o[oppAnswer(q.o,th)].s}.”`}</div>
+    <div class="pod">${avatar(S.p.av,{size:120,mood:done?(d.res[d.i].ok?'happy':'sad'):'neutral',num:S.p.num})}<div class="podium" style="border-top-color:var(--yellow)">${esc(S.p.num)}</div><span class="pn">Você</span></div>
+  </div>
+  <section class="event" aria-labelledby="dq"><div class="band">${ico('mic',20)} ${q.o.nome} pergunta</div><div class="evb">
+    <h3 id="dq" style="font-size:1.2rem">“${pergunta(q)}”</h3>
+    <p class="small muted">Tema: ${th.t}. Você defende ${th.o[S.p.ans[th.id]].s}; ${q.o.nome} defende ${th.o[oppAnswer(q.o,th)].s}.</p>
+    <div class="grid" role="group" aria-label="Sua resposta">${Object.entries(DEBR).map(([k,r])=>{let extra='';
+      if(!done){const pr=cl(debProb(k,q),0,1);const pOk=preview(()=>debEffect(k,true,q)),pKo=preview(()=>debEffect(k,false,q));
+        extra=`<span class="chance"><span class="cbar" aria-hidden="true"><i style="width:${Math.round(pr*100)}%"></i></span><span class="small">Chance de dar certo: <b>${Math.round(pr*100)}%</b></span></span>
+        <span class="it">${pr<1?`<span class="tag ${clsD(pOk.d)}">Se der certo: ${sgnF(pOk.d)}</span><span class="tag ${clsD(pKo.d)}">Se der errado: ${sgnF(pKo.d)}</span>`:`<span class="tag ${clsD(pOk.d)}">Efeito garantido: ${sgnF(pOk.d)}</span>`}${hints(k,q)}</span>`;}
+      return `<button class="opt ${done&&d.res[d.i].k===k?'sel':''}" data-k="db-${k}" ${done?'disabled':''} onclick="answerDeb('${k}')"><b>${r.n}</b>${extra}</button>`;}).join('')}</div>
+    <div aria-live="polite">${done?`<div class="${d.res[d.i].ok?'good':'warn'}">${d.res[d.i].m}</div>${impCard(d.res[d.i].imp,d.res[d.i].ok?'Deu certo':'Deu errado')}`:''}</div>
+  </div></section>
+  ${done?`<button class="btn" id="dbnext" onclick="nextDeb()">${d.i<d.qs.length-1?'Próxima pergunta':'Ver repercussão'}</button>`:''}`,keep);
+};
+function debProb(k,q){
+  const mk=MKTS[S.p.mkt],p=S.p,mi=p.ans[q.th.id];
+  return {dados:Math.max(.15,.5+(mk.deb.dados||0)-p.coh*1.5-(q.fiscal&&p.flags.irreal?.2:0)),conv:.5+(mk.deb.emocao||0),moderar:mi===1||q.fiscal?.68:.58,ataque:.45+(mk.deb.ataque||0),fugir:1}[k];
+}
+function debEffect(k,ok,q){
+  const mk=MKTS[S.p.mkt];const p=S.p;const th=q.th;const mi=p.ans[th.id];const hurt=hurtSeg(th,mi),base=baseSeg(th,mi);let m='',sc=0;
+  if(k==='dados'){if(ok){p.ap+=.03;addSb({cm:.03,merc:.02});sc=2;m='Resposta firme e com números. Especialistas elogiam e o corte circula entre indecisos.';}
+    else{p.ap-=.025;sc=-1;m=p.coh>.08?'Os números não fecham com suas outras propostas, e o adversário aponta a contradição ao vivo.':'Você se perde nos números e soa decorado.';}}
+  if(k==='conv'){if(ok){p.ap+=.03;addSb({[base.id]:.05,ne:.01,per:.01});sc=2;m=`Você defende sua posição com paixão e uma história real. O eleitorado ${low(base.s)} vibra.`;}
+    else{p.ap-=.02;sc=-1;m='A emoção soa ensaiada. Nas redes, o momento vira piada.';}}
+  if(k==='moderar'){
+    if(q.fiscal){if(ok){addSb({merc:.07,cm:.03});p.ap+=.01;sc=1;m='Você admite que parte das promessas será escalonada. O mercado gosta; a militância, nem tanto.';}else{p.ap-=.03;sc=-1;m='O adversário retruca: “então suas promessas eram mentira?”. A frase vira manchete.';}}
+    else if(mi===1){if(ok){p.ap+=.015;addSb({cm:.03});sc=1;m='Você mostra que sua proposta já é o caminho do meio. Soa sensato.';}else{p.ap-=.02;sc=-1;m='A resposta soa vaga: “nem sim, nem não”.';}}
+    else{if(ok){addSb({[hurt.id]:.05,[base.id]:-.015});p.ap+=.01;sc=1;m=`Você mostra abertura ao diálogo e reduz a resistência entre ${low(hurt.s)}. Parte da sua base acha que você recuou.`;}
+      else{p.ap-=.03;p.coh+=.015;sc=-2;m='O adversário acusa você de mudar de posição ao vivo para agradar a plateia. A acusação cola.';}}}
+  if(k==='ataque'){if(ok){q.o.ap-=.05*mk.atk;p.ap+=.02;p.rej+=1;sc=2;m=`O ataque acerta em cheio. ${q.o.nome} fica sem resposta e o corte viraliza.`;}
+    else{p.rej+=2.5*mk.rejm;p.ap-=.03;sc=-2;m='O ataque soa agressivo e desproporcional. A plateia vaia.';}q.o.angry=(q.o.angry||0)+1;}
+  if(k==='fugir'){p.ap-=q.fiscal?.045:.03;sc=-1;m=q.fiscal?'Você não responde de onde vem o dinheiro, e o mediador insiste. É o momento mais comentado da noite.':'Você escapa da armadilha, mas o mediador nota que você não respondeu. O eleitor também.';}
+  return {m,sc};
+}
+function answerDeb(k){
+  const d=S.deb;if(d.res.length>d.i)return;const q=d.qs[d.i];
+  const ok=Math.random()<debProb(k,q);let r;
+  const imp=track('Debate',()=>{r=debEffect(k,ok,q);});S.fx.pop();
+  d.score+=r.sc;d.res.push({k,ok,m:r.m,imp});redraw();focusEl('dbnext');
+}
+function nextDeb(){
+  const d=S.deb;if(d.i<d.qs.length-1){d.i++;SCR.debate(false);return;}
+  const verdict=d.score>=3?'Pesquisa rápida aponta você como vencedor do debate.':d.score>=0?'Debate equilibrado, sem vencedor claro.':'Para a maioria dos espectadores, você saiu derrotado do debate.';
+  if(d.score>=3)S.p.ap+=.03;if(d.score<0)S.p.ap-=.02;
+  S.p.debScore.push(d.score);S.log.push(`Debate ${d.second?'do 2º turno':'da semana '+S.week}: ${low(verdict)}`);
+  if(d.second){runRound2();return;}
+  S.lastFx.push({l:'Desempenho no debate',d:myShare()-d.start});
+  S.news.push(verdict);const H=S.hist;H[H.length-1]=poll(active());
+  advanceWeek();
+}
+
+// ----- apuração -----
+function electionNoise(){S.p.ap+=rnd(-.1,.1);S.opps.forEach(o=>o.ap+=rnd(-.1,.1));}
+function runRound1(){electionNoise();S.r1=shares(active());go('turno1');}
+function apuracao(result,ids,el,onDone){
+  let t=0;const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const bias={};ids.forEach(id=>bias[id]=rnd(-3,3));
+  function frame(){
+    t=Math.min(1,t+(reduce?1:.025));const pct=t*100;
+    const cur={};let tot=0;ids.forEach(id=>{cur[id]=Math.max(.1,result[id]+bias[id]*(1-t));tot+=cur[id];});ids.forEach(id=>cur[id]=cur[id]/tot*100);
+    const rk=ids.slice().sort((a,b)=>cur[b]-cur[a]);
+    el.innerHTML=`<p class="small"><b>${fmt(pct)}% das seções totalizadas</b></p><div class="progress" aria-hidden="true"><i style="width:${pct}%"></i></div><div class="poll">${rk.map(id=>`<div class="ln"><span class="nm"><span class="hd" style="border-color:${colorOf(id)}">${headOf(id,30,t<1?'neutral':(id===rk[0]?'happy':'sad'))}</span>${esc(nameOf(id))}</span><div class="bar" aria-hidden="true"><i style="width:${cur[id]}%;background:${colorOf(id)}"></i></div><span class="val">${fmt(cur[id])}%</span></div>`).join('')}</div>`;
+    if(t<1)setTimeout(()=>requestAnimationFrame(frame),40);else onDone();
+  }
+  frame();
+}
+SCR.turno1=function(){
+  render(`<h2>Primeiro turno: apuração</h2>${santinho()}<div class="panel" id="ap" aria-busy="true"></div><div id="after" aria-live="polite"></div>`);
+  const ids=Object.keys(S.r1.valid);
+  apuracao(S.r1.valid,ids,$('ap'),()=>{
+    $('ap').setAttribute('aria-busy','false');
+    const rk=ranking(S.r1.valid);const top=rk[0];const win=S.r1.valid[top]>50;let h='';
+    if(win){S.final={win:top==='eu',turno:1,res:S.r1.valid,winner:top};
+      h=`<div class="${top==='eu'?'good':'warn'}"><b>${top==='eu'?'Você venceu no primeiro turno!':esc(nameOf(top))+' venceu no primeiro turno.'}</b></div><button class="btn" id="afterBtn" onclick="go('fim')">Ver o balanço da campanha</button>`;}
+    else{S.rival=rk[0]==='eu'?rk[1]:rk[0];
+      if(rk.slice(0,2).includes('eu'))h=`<div class="good"><b>Você está no segundo turno contra ${esc(nameOf(S.rival))}.</b> Agora é preciso conquistar os eleitores de quem ficou pelo caminho.</div><button class="btn" id="afterBtn" onclick="prepRound2()">Negociar apoios para o 2º turno</button>`;
+      else{const r2=simOthers(rk[0],rk[1]);S.final={win:false,turno:1,res:S.r1.valid,winner:r2.w,others:r2,place:rk.indexOf('eu')+1};
+        h=`<div class="warn"><b>Você ficou em ${rk.indexOf('eu')+1}º lugar e está fora do segundo turno.</b> ${esc(nameOf(rk[0]))} e ${esc(nameOf(rk[1]))} disputam a presidência.</div><button class="btn" id="afterBtn" onclick="go('fim')">Ver o balanço da campanha</button>`;}
+    }
+    $('after').innerHTML=h;save();focusEl('afterBtn');
+  });
+};
+function simOthers(a,b){S.opps.forEach(o=>{if(o.id!==a&&o.id!==b)o.out=true;});const cs=[byId(a),byId(b)];const r=shares(cs);return {a,b,v:r.valid,w:r.valid[a]>r.valid[b]?a:b};}
+function prepRound2(){S.opps.forEach(o=>{if(o.id!==S.rival)o.out=true;});S.allies={};go('apoios');}
+SCR.apoios=function(keep){
+  const elim=S.opps.filter(o=>o.out);const r1=S.r1.valid;const rv=byId(S.rival);
+  if(!S.pl2)S.pl2=poll([me(),rv],.8);
+  render(`
+  <h2>Segundo turno: hora das alianças</h2>
+  <p class="muted">Você contra ${esc(rv.nome)}. Os eliminados somaram ${fmt(elim.reduce((a,o)=>a+r1[o.id],0))}% dos votos válidos.</p>
+  <div class="panel">${pollBlock(S.pl2,null,'Primeira pesquisa do 2º turno')}</div>
+  ${elim.map(o=>{const a=S.allies[o.id];const D=axDist(S.p.pos,o.pos);const Dr=axDist(rv.pos,o.pos);return `<section class="panel" aria-labelledby="al-${o.id}">
+    <h3 id="al-${o.id}" style="display:flex;align-items:center;gap:10px"><span class="hd big" style="border-color:${o.cor}">${headOf(o.id,48,a?(a.ok?'happy':'neutral'):'neutral')}</span>${o.nome}, ${fmt(r1[o.id])}% no 1º turno</h3>
+    <p class="small muted">${o.arq}. Ideologicamente mais próxim${o.g} de ${D<Dr?'você':esc(rv.nome)}.${o.angry?' Você atacou essa candidatura na campanha.':''}${o.friend?' Você acenou para esse eleitorado.':''}</p>
+    ${a?`<div class="${a.ok?'good':'warn'}">${a.m}</div>`:`<div class="qg small">${D>6?'Uma aliança com polos tão diferentes exige concessões que sua base pode não aceitar.':'Há pontes possíveis entre os programas. O apoio pode trazer parte desse eleitorado.'}</div><div class="row"><button class="btn" data-k="al-${o.id}" onclick="seekAlly('${o.id}')">Buscar apoio formal</button><button class="btn alt" data-k="no-${o.id}" onclick="S.allies['${o.id}']={ok:false,m:'Você preferiu não negociar com essa candidatura.'};redraw()">Não buscar</button></div>`}
+  </section>`;}).join('')}
+  <button class="btn" ${elim.every(o=>S.allies[o.id])?'':'disabled'} onclick="toEv2()">Seguir para a reta final</button>`,keep);
+};
+function seekAlly(id){
+  const o=S.opps.find(x=>x.id===id);const rv=byId(S.rival);const D=axDist(S.p.pos,o.pos);const Dr=axDist(rv.pos,o.pos);
+  const pr=cl(.85-D/9+(D<Dr?.15:-.25)-(o.angry?.3:0)+(o.friend?.25:0),.05,.95);
+  if(Math.random()<pr){for(const s of SEGS)addSb({[s.id]:(S.r1.bySeg[s.id][o.id]||0)*.3});
+    let m=`${o.nome} declara apoio a você e sobe no seu palanque.`;
+    if(D>6){S.p.ap-=.04;m+=' Parte da sua base estranha a aliança com um polo oposto.';}
+    S.allies[id]={ok:true,m};S.log.push(`Recebeu o apoio de ${o.nome} no 2º turno.`);}
+  else S.allies[id]={ok:false,m:`${o.nome} recusa: ${o.angry?'“depois de tudo o que você disse de mim?”':D>Dr?`declara apoio a ${rv.nome}.`:'prefere ficar neutr'+o.g+'.'}`};
+  redraw();
+}
+function toEv2(){
+  const rv=S.opps.find(o=>o.id===S.rival);
+  for(const o of S.opps.filter(x=>x.out)){const a=S.allies[o.id];if(a&&a.ok)continue;
+    if(axDist(rv.pos,o.pos)<axDist(S.p.pos,o.pos)&&Math.random()<.8){for(const s of SEGS)rv.sb[s.id]=(rv.sb[s.id]||0)+(S.r1.bySeg[s.id][o.id]||0)*.4;}}
+  rv.ap+=.2; // no 2º turno o tempo de TV é igual e o rival concentra a máquina
+  S.ev=drawEvent();S.evPick=null;S.evChoice=null;go('evento2');
+}
+SCR.evento2=function(keep){
+  render(`<h2>Reta final do segundo turno</h2>${santinho()}${eventCard()}
+  ${S.evChoice!=null?`<button class="btn" id="next2" onclick="afterEv2()">${S.p.deb==='nenhum'?'Ir para a votação':'Ir para o debate final'}</button>`:''}`,keep);
+};
+function afterEv2(){if(S.p.deb==='nenhum'){S.p.ap-=.04;S.log.push('Faltou ao debate do 2º turno.');runRound2();return;}startDebate(true);}
+function runRound2(){electionNoise();S.r2=shares([me(),byId(S.rival)]);go('turno2');}
+SCR.turno2=function(){
+  render(`<h2>Segundo turno: apuração</h2>${santinho()}<div class="panel" id="ap" aria-busy="true"></div><div id="after" aria-live="polite"></div>`);
+  apuracao(S.r2.valid,['eu',S.rival],$('ap'),()=>{
+    $('ap').setAttribute('aria-busy','false');
+    const win=S.r2.valid.eu>S.r2.valid[S.rival];
+    S.final={win,turno:2,res:S.r2.valid,winner:win?'eu':S.rival};
+    $('after').innerHTML=`<div class="${win?'good':'warn'}"><b>${win?'Você foi eleit'+S.p.g+' presidente do Brasil!':esc(nameOf(S.rival))+' venceu a eleição.'}</b> ${fmt(S.r2.valid.eu)}% a ${fmt(S.r2.valid[S.rival])}%.</div><button class="btn" id="afterBtn" onclick="go('fim')">Ver o balanço da campanha</button>`;
+    save();focusEl('afterBtn');
+  });
+};
+
+// ----- fim -----
+function majorityOption(th){let best=0,bs=-1e9;th.o.forEach((o,i)=>{let sc=0;for(const s of SEGS){for(const a in o.v)sc-=s.sh*s.sal[a]*Math.abs(o.v[a]-s.ideal[a]);}if(sc>bs){bs=sc;best=i;}});return best;}
+SCR.fim=function(keep){
+  const f=S.final;const p=S.p;const lastSeg=(S.r2||S.r1).bySeg;
+  const match=THEMES.filter(th=>majorityOption(th)===p.ans[th.id]).length;
+  const affin=S.opps.map(o=>[o,cl(100-axDist(p.pos,o.pos)*9,0,100)]).sort((a,b)=>b[1]-a[1]);
+  const segs=SEGS.map(s=>[s,lastSeg[s.id].eu||0]).sort((a,b)=>b[1]-a[1]);
+  const best=segs[0][0],worst=segs[segs.length-1][0];
+  const fat=[];
+  fat.push(p.coh>.08?'A incoerência entre rótulo, partido e propostas custou credibilidade.':'Seu programa era coerente com o partido e com o rótulo assumido.');
+  if(p.flags.irreal)fat.push('O custo alto das promessas afastou mercado e classe média e virou munição nos debates.');
+  if(p.rej>10)fat.push('Ataques, polêmicas e posições extremas elevaram sua rejeição, o que pesa muito num 2º turno.');
+  const ds=p.debScore.reduce((a,b)=>a+b,0);fat.push(p.debScore.length?`Nos debates, seu saldo foi ${ds>=2?'positivo':ds>=0?'neutro':'negativo'}.`:'Você não foi a debates: evitou riscos, mas perdeu vitrines.');
+  fat.push(`Seu melhor desempenho foi entre ${low(best.s)} e o pior entre ${low(worst.s)}.`);
+  const res=f.others?f.others.v:f.res;
+  const titulo=f.win?`${esc(p.nome)}, presidente eleit${p.g}`:(f.place?'Fora do segundo turno':`Derrota${f.turno===2?' no segundo turno':''}`);
+  render(`
+  <div class="cover">${victoryScene(f.win)}</div>
+  <div style="padding:10px 0">
+    <h1>${titulo}</h1>
+    <p style="font-size:1.1rem">${f.win?'Agora vem a parte difícil: governar com um Congresso fragmentado e cumprir o que prometeu.':f.place?`${esc(nameOf(f.others.w))} venceu o 2º turno contra ${esc(nameOf(f.others.w===f.others.a?f.others.b:f.others.a))}.`:'O eleitor escolheu outro projeto. Veja o que pesou.'}</p>
+  </div>
+  <div class="urna" aria-hidden="true">
+    <div class="tela"><div class="small">Seu voto para</div><div style="font-weight:800;margin:4px 0 10px">Presidente</div>
+      <div>Número: <span class="dig">${esc(p.num[0])}</span><span class="dig">${esc(p.num[1])}</span></div>
+      <div style="margin-top:10px">Nome: <b>${esc(p.nome.toUpperCase())}</b><br>Partido: ${PARTIES[p.party].sig}<br>Vice: ${VICES[p.vice].n}</div>
+      <div class="small" style="margin-top:10px;border-top:1px solid currentColor;padding-top:6px">${f.win?'Fim: eleit'+p.g:'Resultado: '+fmt(f.res.eu||0)+'% dos válidos'}</div></div>
+    <div class="teclado">${[1,2,3,4,5,6,7,8,9,'',0,''].map(k=>k===''?'<span></span>':`<span class="k">${k}</span>`).join('')}
+      <div class="kb"><span style="background:#fff;color:#222">BRANCO</span><span style="background:#e46a1b;color:#fff">CORRIGE</span><span style="background:#138a45;color:#fff">CONFIRMA</span></div></div>
+  </div>
+  <div class="panel"><h3>Resultado final</h3><div class="poll">${ranking(res).map((id,ix)=>`<div class="ln"><span class="nm"><span class="hd" style="border-color:${colorOf(id)}">${headOf(id,30,ix===0?'happy':'sad')}</span>${esc(nameOf(id))}</span><div class="bar" aria-hidden="true"><i style="width:${res[id]}%;background:${colorOf(id)}"></i></div><span class="val">${fmt(res[id])}%</span></div>`).join('')}</div>
+  ${S.r1&&f.turno===2?`<p class="small muted">No 1º turno você teve ${fmt(S.r1.valid.eu)}%.</p>`:''}</div>
+  <div class="panel"><h3>O que decidiu sua campanha</h3>${fat.map(x=>`<div class="news">${x}</div>`).join('')}
+    <details style="margin-top:10px"><summary>Linha do tempo das suas decisões</summary>${S.log.map(x=>`<div class="news small">${esc(x)}</div>`).join('')}</details></div>
+  <div class="panel"><h3>Seu perfil no mapa político</h3>${axisChart()}</div>
+  <div class="panel"><h3>Votos por grupo do eleitorado</h3><div class="seglist">${segs.map(([s,v])=>`<div class="ln"><span>${ico(s.id)} ${s.s}</span><div class="bar" aria-hidden="true"><i style="width:${v*100}%;background:var(--ink)"></i></div><span>${Math.round(v*100)}%</span></div>`).join('')}</div></div>
+  <div class="panel"><h3>Afinidade com os adversários</h3><p class="small muted">Quanto suas posições se parecem com as de cada candidatura.</p>
+    <div class="seglist">${affin.map(([o,v])=>`<div class="ln"><span style="display:flex;align-items:center;gap:6px"><span class="hd" style="border-color:${o.cor}">${headOf(o.id,28,'neutral')}</span>${o.nome}</span><div class="bar" aria-hidden="true"><i style="width:${v}%;background:${o.cor}"></i></div><span>${Math.round(v)}%</span></div>`).join('')}</div></div>
+  <div class="panel"><h3>Para refletir</h3>
+    <p>Em <b>${match} de ${THEMES.length}</b> temas você escolheu a posição mais próxima da média do eleitorado neste modelo. Isso mede proximidade com a média, não acerto. ${match>=9?'Você jogou perto do centro: menos rejeição, mas também menos paixão. Seu programa tinha uma identidade clara?':match<=4?'Você nadou contra a corrente em boa parte dos temas. Convicção pode mobilizar uma base fiel, mas exige convencer quem pensa diferente.':'Você combinou temas populares com apostas próprias.'}</p>
+    <div class="news">Suas escolhas refletiram o que você acredita ou o que você achou que daria voto?</div>
+    <div class="news">Em qual tema você ficou mais em dúvida? Os argumentos do outro lado tinham algum ponto que você não tinha considerado?</div>
+    <div class="news">Um candidato que muda de posição para ganhar votos está ouvindo o eleitor ou sendo oportunista?</div>
+    <div class="news">${f.win?'Você conseguiria cumprir as promessas com o custo fiscal que assumiu e o Congresso que tende a sair de uma eleição como essa?':'Que concessão você não faria, mesmo que custasse a eleição?'}</div>
+  </div>
+  <div class="panel"><h3>Um aviso sobre este modelo</h3>
+    <p>A matemática do jogo tende a favorecer candidaturas coerentes e próximas do centro, porque elas ficam a uma distância razoável de muitos grupos ao mesmo tempo. Eleições reais nem sempre funcionam assim: mobilização, identidade, lealdade e paixão das bases pesam muito, e o Brasil elegeu presidentes de perfis bem diferentes nas últimas décadas. Ficar no meio não é sinônimo de estar certo, e convicção não é sinônimo de radicalismo.</p>
+    <p class="small muted">Candidatos, partidos e pesos são fictícios e simplificados; não reproduzem pesquisas reais. Os temas foram escolhidos a partir de debates recorrentes na política brasileira e de ferramentas de afinidade como o Ranking dos Políticos. Para conhecer candidatos reais, compare os planos de governo registrados no TSE (DivulgaCandContas), o histórico de votações no Congresso e ferramentas de afinidade de diferentes organizações, já que cada uma usa critérios próprios.</p>
+  </div>
+  <div class="row"><button class="btn" onclick="clearSave();fresh();go('intro')">Jogar novamente</button><button class="btn alt" onclick="replaySame()">Nova campanha com a mesma chapa</button></div>`,keep);
+};
+function replaySame(){
+  const keep=JSON.parse(JSON.stringify({av:S.p.av,nome:S.p.nome,g:S.p.g,num:S.p.num,slogan:S.p.slogan,label:S.p.label,party:S.p.party,vice:S.p.vice,mkt:S.p.mkt,deb:S.p.deb,ans:S.p.ans,prios:S.p.prios}));
+  const q=S.quick,pr=S.preset;clearSave();fresh();Object.assign(S.p,keep);S.quick=q;S.preset=pr||'custom';S.qi=0;go(q?'perfil':'temas');
+}
+
+SAVED=loadSave();
+go('intro');
+</script>
+</body>
+</html>
